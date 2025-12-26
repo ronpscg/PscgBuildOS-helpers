@@ -1,0 +1,5 @@
+#
+# pscg_debos specific extra layers file. processed by config_pscgdebos__extra_layers_file
+#
+${HOME}/dev/otaworkshop/PscgBuildOS-extra-layers/pscg_debos/graphics/browsers
+${HOME}/dev/otaworkshop/PscgBuildOS-extra-layers/examples/pscg_debos/kiosk-browser-firefox
