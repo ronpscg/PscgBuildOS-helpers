@@ -1,0 +1,5 @@
+#
+# Common external layer addition file
+#
+${HOME}/dev/otaworkshop/PscgBuildOS-extra-layers/examples/basic-examples
+${HOME}/dev/otaworkshop/PscgBuildOS-extra-layers/examples/bsp/realtek/8821cu
