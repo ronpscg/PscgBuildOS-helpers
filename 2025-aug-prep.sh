@@ -25,27 +25,27 @@ qemu_exports() {
 	export config_bsp_qemu__devices_audio_params				# e.g.: -device virtio-sound-pci -audio pipewire,id=snd0
 	export config_bsp_qemu__devices_input_params				# e.g.: -usbdevice tablet"
 	export config_bsp_qemu__devices_network_params_0			# placeholder for more devices
-	export config_bsp_qemu__devices_more_devices_params_0		# placeholder for more devices
-	export config_bsp_qemu__devices_more_devices_params_1		# placeholder for more devices
-	export config_bsp_qemu__kernel_cmdline						# default command line - some more defaults will be appended to it unless COMPLETE_COMMAND_LINE_OVERRIDE=true
+	export config_bsp_qemu__devices_more_devices_params_0			# placeholder for more devices
+	export config_bsp_qemu__devices_more_devices_params_1			# placeholder for more devices
+	export config_bsp_qemu__kernel_cmdline					# default command line - some more defaults will be appended to it unless COMPLETE_COMMAND_LINE_OVERRIDE=true
 	
 	export config_bsp_qemu__complete_command_line_override
 	
-	export config_bsp__qemu_num_cpus							# to specify: -smp <count>
-	export config_bsp__qemu_memory								# to specify -m <size, e.g. 4G etc.>
+	export config_bsp__qemu_num_cpus					# to specify: -smp <count>
+	export config_bsp__qemu_memory						# to specify -m <size, e.g. 4G etc.>
 	export config_bsp_qemu__devices_console_params				# to speficy -nographic , -serial mon:stdio etc.
 }
 
 imager_exports() {
 	export config_imager__installer_workdir		
 	export config_imager__workdir_ext_partition_images
-	export config_imager__workdir # The file system contents of the installation media and the OTA tarball will be populated here
-	export config_imager__workdir_compressed # Expected to be overridden.
+	export config_imager__workdir 						# The filesystem contents of the installation media and the OTA tarball will be populated here
+	export config_imager__workdir_compressed 				# Expected to be overridden.
 	export config_imager__recovery_tarball
 	export config_imager__installer_workdir
 
-	# TODOnow - getinthebuildsystemitself
 	export BUILD_IMAGE_VERSION	# Expected to be overridden. Not needed unless the default config_imager__workdir_compressed is set as an environment variable which uses it)
+	export config_imager__version	# Identical to BUILD_IMAGE_VERSION
 
 
 	# Useful for staging while working on more installer features. So far, all we need is in the main image so delete them most probably
@@ -159,7 +159,8 @@ override_imager_variables() {
 
 	: ${config_imager__workdir_ext_partition_images=${TMP_TOP}/staging/wip-images}
 	
-	: ${BUILD_IMAGE_VERSION=aug16-build-image-version}	# the dependent (in next line) will be overridden
+	: ${BUILD_IMAGE_VERSION=aug16-build-image-version}	# the dependent (in next lines) will be overridden
+	: ${config_imager__version=$BUILD_IMAGE_VERSION}	# identical to BUILD_IMAGE_VERSION
 	: ${config_imager__workdir=${preferred_tmp_top}/staging/installer_fs_workdir}	# The file system contents of the installation media and the OTA tarball will be populated here
 	: ${config_imager__workdir_compressed=${preferred_tmp_top}/staging/${BUILD_IMAGE_VERSION}.tar.xz} # this is overridden
 	: ${config_imager__recovery_tarball=$config_imager__workdir_compressed}
