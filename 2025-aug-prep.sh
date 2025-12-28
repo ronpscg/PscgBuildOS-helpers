@@ -35,9 +35,7 @@ ramdisk_exports() {
 }
 
 kernel_exports() {
-	# The following are used to easily add common an necessary kernel config items, or try out some new ones	
-	export config_kernel__autoadd_tricky_and_required_config_items			# a helper config that sets things you might not expect to deal with like some charset encodings
-	export config_kernel__list_of_config_overrides							# set specific overrides from the command line. Useful for quickly trying out additional kernel features
+	export config_kernel__list_of_config_overrides	# set specific overrides from the command line. Useful for quickly trying out additional kernel features
 }
 
 pscgdebos_exports() {
@@ -46,28 +44,17 @@ pscgdebos_exports() {
 	export config_pscgdebos__init_frameworks	
 }
 
+
+# TODO: busybox the examples we set here put it to be true. Otherwise we don't need it at all.
+# NOTE: in busybox.buildconfig everything is exported with set -a. May export things more specifically
+override_busybox_variables() {
+	: ${config_busybox__do_config_if_already_built=true}	
+}
 busybox_exports() {
 	export config_busybox__do_config_if_already_built
 }
 
 
-
-distro_reuse_exports() {
-	# Reusing artifacts, when appropriate, can save a lot of time during builds.
-	# The disadvantage can be that if you modify something for one distro, you could modify it, without wanting,
-	# for the others, while working on the same shared code, or artifacs from the same archietcture.
-	# If you always rebuild everything, it doesn't matter at all. I use the system mostly to build what I need
-	# SUPER FAST, so these are important parts of my build considerations.
-	# Note that we separate busybox from ramdisk, as busybox is a common component, while ramdisk is a specific one.
-	# You might have met a similar version of the buildsystem when they always shared the code in pscg_busyboxos - it is 
-	# not longer the case, by design
-	export config_distro__reuse_shared_src
-	export config_distro__reuse_shared_arch
-	export config_distro__reuse_shared_src_busybox
-	export config_distro__reuse_shared_src_ramdisk
-	export config_distro__reuse_shared_arch_busybox
-	export config_distro__reuse_shared_arch_ramdisk	
-}
 
 override_toplevel_variables() {	
 	: ${BUILD_OUT=${homedir}/pscgbuildos-builds}
@@ -140,8 +127,8 @@ override_buildtasks_variables() {
 
 
 	: ${fetch_to_existing_folder_strategy=donothing}
-	: ${config_busybox__do_config_if_already_built=true}	
 }
+
 
 # NOTE: for lxqt with install recommends (without it's ~600-700MB, but does not have x11-dbus, and quite a few other things), even 400GB --> factor of 10.15 --> ~3.7GB is not enough.
 #   	    lxqt warns it requires:
@@ -346,11 +333,7 @@ kernel_config_demonstrations_and_i_dont_know_what_but_i_will_check() {
 	#PACKET=y
 	#UNIX=y
 }
-
-set_standard_default_values_wip() {
-	: ${config_kernel__autoadd_tricky_and_required_config_items=true}
-}
-
+/
 example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
 	config_kernel__list_of_config_overrides+=" FB=y FB_VESA=y FRAMEBUFFER_CONSOLE=y  LOGO=y  LOGO_LINUX_CLUT224=y"
 
@@ -381,25 +364,15 @@ example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
 	# virtgpu_drv.c:(.text+0x10): undefined reference to `drm_dev_unplug'
 }
 
-
-set_standard_default_values_distro_reuse() {
-	: ${config_distro__reuse_shared_src=true}		 	# Reuse the source code of the distro, if it exists
-	: ${config_distro__reuse_shared_arch=true} 			# Reuse the architecture specific artifacts, if they exist
-	: ${config_distro__reuse_shared_src_busybox=true} 	# Reuse the source code of busybox, if it exists
-	: ${config_distro__reuse_shared_src_ramdisk=true} 	# Reuse the source code of ramdisk, if it exists
-	: ${config_distro__reuse_shared_arch_busybox=true} 	# Reuse the architecture specific artifacts of busybox, if they exist
-	: ${config_distro__reuse_shared_arch_ramdisk=true} 	# Reuse the architecture specific artifacts of the ramdisk, if they exist
-}
-
 wrapper_exports() {
 	toplevel_exports
-	qemu_exports
-	imager_exports	
+	#REMOVEDqemu_exports
+	#REMOVEDimager_exports	
 	ramdisk_exports
 	pscgdebos_exports
-	busybox_exports
-	kernel_exports
-	distro_reuse_exports
+	busybox_exports			# This remains because the example set override_busybox_variables=true - which is the opposite of the default. It will be reomved
+	kernel_exports			# This remains because this file sets config_kernel__list_of_config_overrides - it will be packaged in a specific example
+	#REMOVEDdistro_reuse_exports
 }
 
 wrapper_override_environment_variables() {
@@ -433,15 +406,16 @@ wrapper_override_environment_variables() {
 
 	#override_ramdisk_variables_for_kexec_example
 
+	override_busybox_variables
 	kernel_config_demonstrations_and_i_dont_know_what_but_i_will_check
 
 	config_imager__ext_partition_system_size_scale_factor=1.35 # TODO check in other places, add export	
 	
-	set_standard_default_values_wip
+	#REMOVEDset_standard_default_values_wip
 	example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu
 
 	
-	set_standard_default_values_distro_reuse
+	#REMOVEDset_standard_default_values_distro_reuse
 
 	# one could select to set the partition sizes or scale factors by the distro - we'll look at it later
 	if [ "$distro" = "pscg_debos" ] ; then
