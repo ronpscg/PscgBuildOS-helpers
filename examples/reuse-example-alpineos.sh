@@ -1,4 +1,7 @@
 #!/bin/bash
+LOCAL_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
+cd $LOCAL_DIR/.. # work on the helpers main directory (cleanup example)
+
 DEBIAN_ARCHS="i386 x86_64 arm arm64 riscv "
 DEBIAN_PORTS_ARCHS="loongarch "
 
