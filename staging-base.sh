@@ -35,3 +35,25 @@ distro_reuse_exports() {
 set_standard_default_values_wip() {
         : ${config_kernel__autoadd_tricky_and_required_config_items=true}
 }
+
+
+#
+# This is for a minor speedup in working with the initramfs (ramdisk), and for less verbosity when packing it
+#
+override_ramdisk_variables() {
+        : ${config_ramdisk__compression=cpio}
+        : ${config_ramdisk__verbose_cpio=false}
+}
+ramdisk_exports() {
+        export config_ramdisk__compression
+        export config_ramdisk__verbose_cpio
+}
+
+
+#XoXoXo
+tmpstuffbeforeputtingitinthealmostmainscript() {
+	override_ramdisk_variables
+	ramdisk_exports
+}
+
+#tmpstuffbeforeputtingitinthealmostmainscript

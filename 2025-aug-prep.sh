@@ -91,15 +91,6 @@ override_imager_variables() {
 
 }
 
-override_ramdisk_variables() {
-	: ${config_ramdisk__compression=cpio}
-	: ${config_ramdisk__verbose_cpio=false}
-}
-ramdisk_exports() {
-	export config_ramdisk__compression
-	export config_ramdisk__verbose_cpio
-}
-
 override_pscgdebos_variables() {
 	if [ "${config_distro}" = "pscg_debos" ] ; then
 		# would preferrably test here for feature_graphics/for package groups/etc. but I still did not make it up
@@ -368,7 +359,7 @@ wrapper_exports() {
 	toplevel_exports
 	#REMOVEDqemu_exports
 	#REMOVEDimager_exports	
-	ramdisk_exports			# This remains only to have a non-verbose cpio, and to not compress the cpio archive (both are intentionally not the default build system behavior)
+	#REMOVEDramdisk_exports		# This remains only to have a non-verbose cpio, and to not compress the cpio archive (both are intentionally not the default build system behavior)
 	ramdisk_exports_kexec_example	# specific to the Kexec example at my kexec talk, May 2025
 	pscgdebos_exports
 	busybox_exports			# This remains because the example set override_busybox_variables=true - which is the opposite of the default. It will be reomved
@@ -379,7 +370,7 @@ wrapper_exports() {
 wrapper_override_environment_variables() {
 	override_toplevel_variables
 	override_imager_variables
-	override_ramdisk_variables
+	#REMOVEDoverride_ramdisk_variables
 	override_pscgdebos_variables
 		
 	override_buildtasks_variables
