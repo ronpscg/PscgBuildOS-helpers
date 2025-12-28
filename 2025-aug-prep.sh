@@ -23,17 +23,6 @@ toplevel_exports() {
 	export fetch_to_existing_folder_strategy # can be used to decide what to do with existing folders as per base_fetch_unpack.sh
 }
 
-ramdisk_exports() {
-	export config_ramdisk__compression
-	export config_ramdisk__verbose_cpio
-
-	# The folowing are used to copy files to the ramdisk during the course of the build, without affecting the build system
-	# If things work to your satisfaction, you can generate organized reicpes or update the respective files in the build system
-	export config_ramdisk__directories_to_create	# create additional directories in the ramdisk as part of a particular build
-	export config_ramdisk__more_files_to_copy_src	# copy files from these locations to the ramdisk
-	export config_ramdisk__more_files_to_copy_dst   # copy to this particula locatin designed mostly to ilustrate kexec - this is a place to copy a capture kernel to (in the target)	
-}
-
 kernel_exports() {
 	export config_kernel__list_of_config_overrides	# set specific overrides from the command line. Useful for quickly trying out additional kernel features
 }
@@ -105,6 +94,10 @@ override_imager_variables() {
 override_ramdisk_variables() {
 	: ${config_ramdisk__compression=cpio}
 	: ${config_ramdisk__verbose_cpio=false}
+}
+ramdisk_exports() {
+	export config_ramdisk__compression
+	export config_ramdisk__verbose_cpio
 }
 
 override_pscgdebos_variables() {
@@ -283,6 +276,13 @@ override_ramdisk_variables_for_kexec_example() {
 	config_ramdisk__more_files_to_copy_dst="/more-kernels" # designed mostly to ilustrate kexec - this is a place to copy a capture kernel to (in the target)
 	config_ramdisk__directories_to_create="/more-kernels"
 }
+ramdisk_exports_kexec_example() {
+	# The folowing are used to copy files to the ramdisk during the course of the build, without affecting the build system
+	# If things work to your satisfaction, you can generate organized reicpes or update the respective files in the build system
+	export config_ramdisk__directories_to_create	# create additional directories in the ramdisk as part of a particular build
+	export config_ramdisk__more_files_to_copy_src	# copy files from these locations to the ramdisk
+	export config_ramdisk__more_files_to_copy_dst   # copy to this particula locatin designed mostly to ilustrate kexec - this is a place to copy a capture kernel to (in the target)
+}
 
 # essentially they set IKCONFIG IKCONFIG_PROC and CONFIG_MODULES and have comments that explain why they are needed
 # I will do another kernel config pass at another time.
@@ -368,7 +368,8 @@ wrapper_exports() {
 	toplevel_exports
 	#REMOVEDqemu_exports
 	#REMOVEDimager_exports	
-	ramdisk_exports
+	ramdisk_exports			# This remains only to have a non-verbose cpio, and to not compress the cpio archive (both are intentionally not the default build system behavior)
+	ramdisk_exports_kexec_example	# specific to the Kexec example at my kexec talk, May 2025
 	pscgdebos_exports
 	busybox_exports			# This remains because the example set override_busybox_variables=true - which is the opposite of the default. It will be reomved
 	kernel_exports			# This remains because this file sets config_kernel__list_of_config_overrides - it will be packaged in a specific example
