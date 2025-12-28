@@ -10,6 +10,9 @@
 # - https://www.youtube.com/watch?v=Ns-gvGooBrc&list=PLBaH8x4hthVysdRTOlg2_8hL6CWCnN5l-&index=112 (controlling what goes where firmware and modules wise - builtin, initramfs, rootfs)
 # - https://www.youtube.com/watch?v=WfoMf0H3Hag&list=PLBaH8x4hthVysdRTOlg2_8hL6CWCnN5l-&index=113 (The creation of the layer [which has been updated since putting it])
 
+LOCAL_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
+cd $LOCAL_DIR/.. # work on the helpers main directory (cleanup example)
+
 : ${ARCH=x86_64}
 
 export ARCH

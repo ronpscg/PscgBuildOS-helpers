@@ -1,6 +1,13 @@
 #!/bin/bash
+LOCAL_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
+cd $LOCAL_DIR/.. # work on the helpers main directory (cleanup example)
+
 DEBIAN_ARCHS="i386 x86_64 arm arm64 riscv "
 DEBIAN_PORTS_ARCHS="loongarch "
+if [ "$(lsb_release -r | cut -f 2)" = "24.04" ] ; then
+	# or alternatively - set the links of gcc-14
+	DEBIAN_PORTS_ARCHS=""
+fi
 
 
 
@@ -25,7 +32,7 @@ busyboxos_imager_variables_by_arch() {
 	local arch=$1
 	# Implicitly sets the installer image full path
 	# (just showing the definition: ${config_imager__installer_image_file="$config_toplevel__shared_artifacts/$BUILD_IMAGE_VERSION-installer.img"} )
-	export BUILD_IMAGE_VERSION=sep03_busyboxos_0309-${arch}
+	export BUILD_IMAGE_VERSION=aug19_busyboxos_image_2308-${arch}
 	# Sets the storage image
 	export config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage-${arch}.img
 	# Sets the livecd by copying $config_imager__workdir_ext_partition_images/system.img to $config_bsp__qemu_livecd_storage_device_path
@@ -74,6 +81,20 @@ busyboxos_imager_variables_by_arch() {
 	# First demonstration: commented out to show defaults
 	set_partition_layout_variables	
 }
+
+temp_workaround_attempt() {
+	arch=$1
+	# Sets the storage image
+	export config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage-${arch}.img
+	# Sets the livecd by copying $config_imager__workdir_ext_partition_images/system.img to $config_bsp__qemu_livecd_storage_device_path
+	export config_bsp__qemu_livecd_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd-${arch}.img
+
+	# More examples that are exaggerated (using ARCH=i386, as it is just faster to run the target itself for)
+	# Copies to removable media <if...>
+	# Adds: ./tmp-but-persistent/PscgBuildOS/removable_media-i386.img
+	export config_bsp__qemu_removable_media_path=$TMP_BUT_PERSISTENT_TOP/removable_media-${arch}.img
+}
+
 #
 # $1: codename
 # $2: build_tasks
@@ -100,7 +121,7 @@ build_busyboxos() {
 	for ARCH in $ARCHS ; do
 		busyboxos_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
 		export ARCH=$ARCH config_distro=pscg_busyboxos		
-		./aug18-wrapper.sh $build_tasks
+		echo y | ./aug18-wrapper.sh $build_tasks
 	done
 }
 
@@ -114,7 +135,7 @@ build_alpineos() {
 	for ARCH in $ARCHS ; do
 		busyboxos_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
 		export ARCH=$ARCH config_distro=pscg_alpineos
-		./aug18-wrapper.sh $build_tasks
+		echo y | ./aug18-wrapper.sh $build_tasks
 	done
 }
 
@@ -150,36 +171,19 @@ set +a
 START=$(date)
 
 export config_ramdisk__kexectools_include=false
-#build_debian trixie buildall "$DEBIAN_ARCHS"
-#build_debian trixie buildall "$DEBIAN_PORTS_ARCHS"
+#build_debian trixie buildall "$DEBIAN_ARCHS" # Seems to be OK - when I tested i386 I had to install firefox from the local cache on the system, I am not sure why. not sure about riscv - maybe something is wrong with the initramfs but it's strange because alpineos build works there. all of these used to work flawlessly
+#build_debian sid buildall "$DEBIAN_PORTS_ARCHS" # Dec 25 25 - loongarch does not build seemlesly. It used to work for when Trixie was sid. 
 #build_debian trixie buildall "s390"
 
 #build_busyboxos buildall "$DEBIAN_ARCHS $DEBIAN_PORTS_ARCHS"
+#build_alpineos buildall "$DEBIAN_ARCHS $DEBIAN_PORTS_ARCHS"
 #build_busyboxos buildall i386
-#build_busyboxos buildall s390
-#build_busyboxos buildall sparc64
+#build_busyboxos buildall s390 # either console doesn't work or block device
+#build_busyboxos buildall sparc64 # qemu-system-sparc64: -device virtio-blk-pci,drive=emmcdisk: PCI: no slot/function available for virtio-blk-pci, all in use or reserved
+#temp_workaround_attempt riscv
+#build_debian trixie buildall riscv # There is a specific issue with RISC-V on this build, kernel panics with the ramdisk, not sure why. 6.17-rc2. 6.19-rc2 is fine.
 
-demo_materials_reusing_loongarch() {
-	set -a
-	config_distro__prebuilt_image_materials_workdir=/tmp/whatever-stam-foo-bar
-	config_buildtasks__do_build_rootfs=false
-	config_buildtasks__do_build_kernel=false
-	config_buildtasks__do_build_kernel_modules=false
-	config_buildtasks__do_build_ramdisk=false
-	config_buildtasks__do_build_bootloader=false
-
-	config_kernel__edu_do_modules_prepare=false
-	config_examples__common_linux_add_hello_module=false
-
-	# demo: the default without setting it is 500. You can uncomment it
-	#config_bsp__qemu_storage_device_size_mib=2000 # Just because I am reusing something where 
-	# or, you can copy from wherever we built the ramdisk materials, as partitions-emmc.config will match what is there
-	distro__prebuilt_partitions_emmc_config_file_for_imager_estimation=/tmp/pscg_alpineos/build-loongarch/ramdisk/initramfs/flasher/config/partitions-emmc.config
-	set +a
-}
-demo_materials_reusing_loongarch
-build_alpineos buildall loongarch
-
+build_debian trixie buildall x86_64
 END=$(date)
 echo "Done."
 echo "$START"
