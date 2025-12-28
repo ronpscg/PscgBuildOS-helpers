@@ -3,62 +3,6 @@
 # The objective of this function is to be very clear on what is exported, before setting default variables
 #
 
-qemu_exports() {
-	export config_bsp__qemu_copy_installer_image_to_removable_media
-
-	# If not set explicitly, for the live image part (I checked now for non staging parts)  you will see that it complains on the default which is 500.
-	# A huge, graphics image, takes much more
-	export config_bsp__qemu_storage_device_size_mib
-
-	# We are creating a livecd where we just copy the system.img and pack it in the resulting image - and we don't want qemu to recreate it.
-	# If we decide to create both a livecd and and installer image - we will use other variables
-	# The reason for separating the livecd is that I wanted to avoid the time it takes to compress the image, which is (re)used for the OTA update.
-	# Otherwise, I would make the livecd and the installer the same image (and I might do it again - I used to have this mode in the past but it was not popular with customers)
-	export config_bsp__qemu_recreate_storage_device
-	export config_bsp__qemu_storage_device_path
-
-	# Ideally, with a lot of memory, this would go under /tmp. HOWEVER, in the graphics builds, /tmp/staging is 10GB, and for a 32GB RAM machine, it will be exhausted
-	# using tmpfs is much faster than using storage
-	# on the other hand, using storage can have an advantage of persisting after reboot (if you want to get back to your development or games, just to see your tmp files gone...)
-	#export config_bsp__qemu_storage_device_path=${homedir}/pscgbuildos-builds/pscgbuildos_storage.img
-	export config_bsp_qemu__devices_graphics_params				# e.g.: -display gtk,gl=on -device virtio-gpu -vga none
-	export config_bsp_qemu__devices_audio_params				# e.g.: -device virtio-sound-pci -audio pipewire,id=snd0
-	export config_bsp_qemu__devices_input_params				# e.g.: -usbdevice tablet"
-	export config_bsp_qemu__devices_network_params_0			# placeholder for more devices
-	export config_bsp_qemu__devices_more_devices_params_0			# placeholder for more devices
-	export config_bsp_qemu__devices_more_devices_params_1			# placeholder for more devices
-	export config_bsp_qemu__kernel_cmdline					# default command line - some more defaults will be appended to it unless COMPLETE_COMMAND_LINE_OVERRIDE=true
-	
-	export config_bsp_qemu__complete_command_line_override
-	
-	export config_bsp__qemu_num_cpus					# to specify: -smp <count>
-	export config_bsp__qemu_memory						# to specify -m <size, e.g. 4G etc.>
-	export config_bsp_qemu__devices_console_params				# to speficy -nographic , -serial mon:stdio etc.
-}
-
-imager_exports() {
-	export config_imager__installer_workdir		
-	export config_imager__workdir_ext_partition_images
-	export config_imager__workdir 						# The filesystem contents of the installation media and the OTA tarball will be populated here
-	export config_imager__workdir_compressed 				# Expected to be overridden.
-	export config_imager__recovery_tarball
-	export config_imager__installer_workdir
-
-	export BUILD_IMAGE_VERSION	# Expected to be overridden. Not needed unless the default config_imager__workdir_compressed is set as an environment variable which uses it)
-	export config_imager__version	# Identical to BUILD_IMAGE_VERSION
-
-
-	# Useful for staging while working on more installer features. So far, all we need is in the main image so delete them most probably
-	# : ${config_imager__staging_list_of_image_creation_scripts_to_run="make-noninstaller-storage.sh"} # scripts to run under the staging/ dir
-	#: ${config_imager__staging_do_non_staging_stuff="false"} # true if you want to run the $config_imager__list_of_image_creation_scripts_to_run
-	#: ${config_imager__list_of_image_creation_scripts_to_run=""} # staging - for now either installer or bootable storage, mutually exclusive
-
-	# the reason to set the following to false would be significant buildtime speedup 
-	# if you just want to have a livecd but not an installer/OTA/recovery image
-	export config_imager__create_ota_image 	
-
-	export config_imager__ext_partition_system_size_scale_factor
-}
 
 toplevel_exports() {
 	export HOST_CACHES_BASE_DIR # can be used to internally take care of somet things
