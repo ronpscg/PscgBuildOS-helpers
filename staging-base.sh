@@ -49,11 +49,32 @@ ramdisk_exports() {
         export config_ramdisk__verbose_cpio
 }
 
+#------------------------------------------------------------------
+# The default of the build system is something lighter than systemd, and it has not been used in a long while.
+# systemd is of course a much better choice usually, but not always. So we keep this, as an aware decision of the build system user, and set the default to systemd at the last-line,
+# unless someone else wants to modify it and use another init system (which is just fine).
+#-------------------------------------------------------------------
+override_pscgdebos_variables_init_frameworks() {
+        if [ "${config_distro}" = "pscg_debos" ] ; then
+                # In general, it is less likely to think of any modern full system that uses Debian and does not use systemd.
+                # It would preferrably test here for feature_graphics/for package groups/etc. but I still did not make it up entirely (I did the former, ENABLE_GRAPHICS).
+                # So we just set the last-line defaults to be systemd.
+                #
+                # Do note while at it, that it could be VERY useful to minimize the number of packages downloaded in the cache
+                # I just downloaded everthing that is declared so that complete offline build are possible, but on
+                # some architectures where debootstrap takes a lot of time, it can even take more time just to prepare the initial cache and download things
+                : ${config_pscgdebos__init_frameworks=systemd} # to assist with lightdm dependencies
+        fi
+}
+
+
 
 #XoXoXo
 tmpstuffbeforeputtingitinthealmostmainscript() {
 	override_ramdisk_variables
 	ramdisk_exports
+
+	override_pscgdebos_variables_init_frameworks # set to systemd for pscg_debos
 }
 
-#tmpstuffbeforeputtingitinthealmostmainscript
+tmpstuffbeforeputtingitinthealmostmainscript

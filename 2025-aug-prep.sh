@@ -27,12 +27,6 @@ kernel_exports() {
 	export config_kernel__list_of_config_overrides	# set specific overrides from the command line. Useful for quickly trying out additional kernel features
 }
 
-pscgdebos_exports() {
-	export config_pscgdebos__debian_or_ubuntu
-	export config_pscgdebos__debian_codename
-	export config_pscgdebos__init_frameworks	
-}
-
 
 # TODO: busybox the examples we set here put it to be true. Otherwise we don't need it at all.
 # NOTE: in busybox.buildconfig everything is exported with set -a. May export things more specifically
@@ -91,14 +85,26 @@ override_imager_variables() {
 
 }
 
-override_pscgdebos_variables() {
+#------------------------------------------------------------------
+# TODO: This is kept because no one really exports it in the build system, 
+# the default of the build system is something lighter than systemd, and it has not been used in a long while
+# At the time of refactoring I did not have time to test it so I use this note and this export - and this will be reworked so that all init frameworks
+# are tested, and the export in this function will no longer exist
+#-------------------------------------------------------------------
+override_pscgdebos_variables_init_frameworks() {
 	if [ "${config_distro}" = "pscg_debos" ] ; then
-		# would preferrably test here for feature_graphics/for package groups/etc. but I still did not make it up
-		# while at it, it could be VERY useful to minimize the number of packages downloaded in the cache
+		# In general, it is less likely to think of any modern full system that uses Debian and does not use systemd.
+		# It would preferrably test here for feature_graphics/for package groups/etc. but I still did not make it up entirely (I did the former, ENABLE_GRAPHICS).
+		# So we just set the last-line defaults to be systemd.
+		#
+		# Do note while at it, that it could be VERY useful to minimize the number of packages downloaded in the cache
 		# I just downloaded everthing that is declared so that complete offline build are possible, but on 
-		# some architectures where debootstrap takes a lot of time, it can even take more time
+		# some architectures where debootstrap takes a lot of time, it can even take more time just to prepare the initial cache and download things
 		: ${config_pscgdebos__init_frameworks=systemd} # to assist with lightdm dependencies
 	fi
+}
+pscgdebos_exports() {
+	export config_pscgdebos__init_frameworks
 }
 
 override_buildtasks_variables() {
@@ -379,7 +385,7 @@ wrapper_override_environment_variables() {
 	override_toplevel_variables
 	override_imager_variables
 	#REMOVEDoverride_ramdisk_variables
-	override_pscgdebos_variables
+	override_pscgdebos_variables_init_frameworks
 		
 	override_buildtasks_variables
 # config_buildtasks__do_build_kernel=true
