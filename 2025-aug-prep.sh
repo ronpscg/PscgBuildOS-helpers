@@ -355,6 +355,11 @@ example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
 	# virtgpu_drv.c:(.text+0x10): undefined reference to `drm_dev_unplug'
 }
 
+#-----------------------------------------------------------------------------
+# This should not be needed anymore, as the logic is to always source, and 
+# the build system itself exports everything it needs (otherwise, it is a bug and the build system should fix it. 
+# it may happen, due to years of using wrappers, and never the build system directly, but I worked quite hard to prevent that, and I think I have)
+#-----------------------------------------------------------------------------
 wrapper_exports() {
 	toplevel_exports
 	#REMOVEDqemu_exports
@@ -367,6 +372,9 @@ wrapper_exports() {
 	#REMOVEDdistro_reuse_exports
 }
 
+#-----------------------------------------------------------------------------
+# This is where you would want to override the environment variables if you want to wrap the build-image.sh (main project) or build-pscgbuildos-image.sh (the last-line wrapper)
+#-----------------------------------------------------------------------------
 wrapper_override_environment_variables() {
 	override_toplevel_variables
 	override_imager_variables
@@ -418,16 +426,15 @@ wrapper_override_environment_variables() {
 	# [ -t 0 ] && [ "$AUTO_CONFIRM_BUILD" = "true" ] && read -p "Press enter to continue with the build-debos-image.sh script"
 }
 
-#
+#-------------------------------------------------------------------
 # A template example of a wrapper, should you want to use it
-#
+#-------------------------------------------------------------------
 wrapper_main() {
 	MAIN_HELPER_SCRIPT=./build-pscgbuildos-image.sh
 	. $MAIN_HELPER_SCRIPT || { echo "Failed to source $MAIN_HELPER_SCRIPT"; exit 1; }
 	init_main_builder_env
-	wrapper_override_environment_variables "$@"	
-
-	export_variables	# this should not be called as all exports should be done in the build system itself but we still need to organize that and that will be a lot of changes
+	
+	wrapper_override_environment_variables "$@"
 	wrapper_exports		# this should not be called as all exports should be done in the build system itself but we still need to organize that and that will be a lot of changes
 
 	# Call the main function of the main helper script
