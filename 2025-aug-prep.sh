@@ -5,14 +5,6 @@
 
 
 toplevel_exports() {
-	export HOST_CACHES_BASE_DIR # can be used to internally take care of somet things
-	export DEPLOY_BASE_DIR
-	
-	export config_toplevel__caches_workdir_base_path
-	export config_toplevel__caches_base_path
-	export config_toplevel__downloads_base_path
-	export config_toplevel__shared_artifacts
-
 	export config_buildtasks__do_build_kernel
 	export config_buildtasks__do_build_rootfs
 	export config_buildtasks__do_build_rootfs_caches_and_quit
@@ -37,21 +29,6 @@ busybox_exports() {
 	export config_busybox__do_config_if_already_built
 }
 
-
-
-override_toplevel_variables() {	
-	: ${BUILD_OUT=${homedir}/pscgbuildos-builds}
-	: ${TMP_TOP=/tmp/PscgBuildOS}
-	# Maybe export both, for a nice default
-	: ${HOST_CACHES_BASE_DIR=${homedir}/pscgbuildos-build-caches-host/host}
-	: ${DEPLOY_BASE_DIR=/home/ron/shared_artifacts-jul}
-	
-	: ${config_toplevel__caches_workdir_base_path=$HOST_CACHES_BASE_DIR/caches_workdir}
-	: ${config_toplevel__caches_base_path=$HOST_CACHES_BASE_DIR/caches_dir}
-	: ${config_toplevel__downloads_base_path=$HOST_CACHES_BASE_DIR/downloads_dir}
-
-	: ${config_toplevel__shared_artifacts=$DEPLOY_BASE_DIR}}
-}
 
 override_imager_variables() {
 	# tmp is faster and easier on your storage whereas persistent is bigger. using tmpfs with huge stuff is a bad idea, so only use it if you have A LOT of RAM on your host
@@ -83,28 +60,6 @@ override_imager_variables() {
 
 	: ${config_imager__installer_media_size_sectors=$((6*$SECTORS_PER_GIB))}
 
-}
-
-#------------------------------------------------------------------
-# TODO: This is kept because no one really exports it in the build system, 
-# the default of the build system is something lighter than systemd, and it has not been used in a long while
-# At the time of refactoring I did not have time to test it so I use this note and this export - and this will be reworked so that all init frameworks
-# are tested, and the export in this function will no longer exist
-#-------------------------------------------------------------------
-override_pscgdebos_variables_init_frameworks() {
-	if [ "${config_distro}" = "pscg_debos" ] ; then
-		# In general, it is less likely to think of any modern full system that uses Debian and does not use systemd.
-		# It would preferrably test here for feature_graphics/for package groups/etc. but I still did not make it up entirely (I did the former, ENABLE_GRAPHICS).
-		# So we just set the last-line defaults to be systemd.
-		#
-		# Do note while at it, that it could be VERY useful to minimize the number of packages downloaded in the cache
-		# I just downloaded everthing that is declared so that complete offline build are possible, but on 
-		# some architectures where debootstrap takes a lot of time, it can even take more time just to prepare the initial cache and download things
-		: ${config_pscgdebos__init_frameworks=systemd} # to assist with lightdm dependencies
-	fi
-}
-pscgdebos_exports() {
-	export config_pscgdebos__init_frameworks
 }
 
 override_buildtasks_variables() {
@@ -148,7 +103,7 @@ override_storage_and_installer_variables_for_some_dev_speedup() {
 	# Otherwise, I would make the livecd and the installer the same image (and I might do it again - I used to have this mode in the past but it was not popular with customers)
 	if false ; then
 	: ${config_bsp__qemu_recreate_storage_device=false}
-	: ${config_bsp__qemu_storage_device_path=$DEPLOY_BASE_DIR/pscgbuildos_storage_livecd.img}
+	: ${config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd.img}
 	fi
 
 	# Ideally, with a lot of memory, this would go under /tmp. HOWEVER, in the graphics builds, /tmp/staging is 10GB, and for a 32GB RAM machine, it will be exhausted
@@ -372,7 +327,7 @@ wrapper_exports() {
 	#REMOVEDimager_exports	
 	#REMOVEDramdisk_exports		# This remains only to have a non-verbose cpio, and to not compress the cpio archive (both are intentionally not the default build system behavior)
 	ramdisk_exports_kexec_example	# specific to the Kexec example at my kexec talk, May 2025
-	pscgdebos_exports
+	#REMOVEDpscgdebos_exports
 	busybox_exports			# This remains because the example set override_busybox_variables=true - which is the opposite of the default. It will be reomved
 	kernel_exports			# This remains because this file sets config_kernel__list_of_config_overrides - it will be packaged in a specific example
 	#REMOVEDdistro_reuse_exports
@@ -382,10 +337,10 @@ wrapper_exports() {
 # This is where you would want to override the environment variables if you want to wrap the build-image.sh (main project) or build-pscgbuildos-image.sh (the last-line wrapper)
 #-----------------------------------------------------------------------------
 wrapper_override_environment_variables() {
-	override_toplevel_variables
+	#REMOVEDoverride_toplevel_variables
 	override_imager_variables
 	#REMOVEDoverride_ramdisk_variables
-	override_pscgdebos_variables_init_frameworks
+	#REMOVEDoverride_pscgdebos_variables_init_frameworks
 		
 	override_buildtasks_variables
 # config_buildtasks__do_build_kernel=true
