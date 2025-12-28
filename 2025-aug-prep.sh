@@ -91,11 +91,8 @@ ramdisk_exports() {
 }
 
 kernel_exports() {
-	export config_kernel__fetch_git_or_tarball	
-
 	# The following are used to easily add common an necessary kernel config items, or try out some new ones	
 	export config_kernel__autoadd_tricky_and_required_config_items			# a helper config that sets things you might not expect to deal with like some charset encodings
-	export config_kernel__fail_on_missing_tricky_and_required_config_items	# set anyway by default in the build system, but yeah let's do that
 	export config_kernel__list_of_config_overrides							# set specific overrides from the command line. Useful for quickly trying out additional kernel features
 }
 
@@ -107,7 +104,6 @@ pscgdebos_exports() {
 
 busybox_exports() {
 	export config_busybox__do_config_if_already_built
-	export config_busybox__fetch_git_or_tarball
 }
 
 
@@ -407,12 +403,8 @@ kernel_config_demonstrations_and_i_dont_know_what_but_i_will_check() {
 	#UNIX=y
 }
 
-set_standard_default_values_run-july() {
+set_standard_default_values_wip() {
 	: ${config_kernel__autoadd_tricky_and_required_config_items=true}
-	: ${config_kernel__fail_on_missing_tricky_and_required_config_items=true} # set anyway by default in the build system, but yeah let's do that
-
-	: ${config_busybox__fetch_git_or_tarball=git}
-	: ${config_kernel__fetch_git_or_tarball=git}
 }
 
 example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
@@ -501,7 +493,7 @@ wrapper_override_environment_variables() {
 
 	config_imager__ext_partition_system_size_scale_factor=1.35 # TODO check in other places, add export	
 	
-	set_standard_default_values_run-july
+	set_standard_default_values_wip
 	example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu
 
 	
