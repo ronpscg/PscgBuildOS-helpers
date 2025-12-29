@@ -12,7 +12,7 @@
 
 LOCAL_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
 cd $LOCAL_DIR/.. # work on the helpers main directory (cleanup example)
-
+NEXT_WRAPPER_SCRIPT=./wip-2-wrapper.sh  # Allow easy chaining of a subsequent script
 : ${ARCH=x86_64}
 
 export ARCH
@@ -20,5 +20,5 @@ export config_distro__extra_layers
 config_distro__extra_layers+=" /home/ron/dev/otaworkshop/PscgBuildOS-extra-layers/examples/bsp/realtek/8821cu"
 config_distro__extra_layers+=" /home/ron/dev/otaworkshop/PscgBuildOS-extra-layers/examples/basic-examples/"
 
-config_buildtasks__do_build_kernel=true config_bsp__qemu_livecd_extract_system_overlays_into_live_image=true  config_distro=pscg_alpineos BUILD_IMAGE_VERSION=stamtest  ./aug18-wrapper.sh buildall
+config_buildtasks__do_build_kernel=true config_bsp__qemu_livecd_extract_system_overlays_into_live_image=true  config_distro=pscg_alpineos BUILD_IMAGE_VERSION=stamtest  $NEXT_WRAPPER_SCRIPT buildall
 

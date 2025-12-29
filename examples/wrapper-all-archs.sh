@@ -2,7 +2,7 @@
 LOCAL_DIR=$(realpath $(dirname ${BASH_SOURCE[0]}))
 cd $LOCAL_DIR/.. # work on the helpers main directory (cleanup example)
 
-NEXT_WRAPPER_SCRIPT=./aug18-wrapper.sh	# Allow easy chaining of a subsequent script
+NEXT_WRAPPER_SCRIPT=./wip-2-wrapper.sh	# Allow easy chaining of a subsequent script
 
 DEBIAN_ARCHS="i386 x86_64 arm arm64 riscv "
 DEBIAN_PORTS_ARCHS="loongarch "
