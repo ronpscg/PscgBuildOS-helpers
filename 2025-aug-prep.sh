@@ -339,7 +339,7 @@ wrapper_exports() {
 #-----------------------------------------------------------------------------
 wrapper_override_environment_variables() {
 	#REMOVEDoverride_toplevel_variables
-	override_imager_variables	# this can be useful in a wrapper as it can help saving a lot of time for some tasks - it is in the WIP one though - but the WIP does not work for Debian if called from within this framework (otherwise it is fine!) - so the "problem is in build-pscgbuildos-image.sh  TODO: fix it another time when I'm fresh
+	#REMOVEoverride_imager_variables	# this can be useful in a wrapper as it can help saving a lot of time for some tasks - it is in the WIP one though - but the WIP does not work for Debian if called from within this framework (otherwise it is fine!) - so the "problem is in build-pscgbuildos-image.sh  TODO: fix it another time when I'm fresh
 	#REMOVEDoverride_ramdisk_variables
 	#REMOVEDoverride_pscgdebos_variables_init_frameworks
 		

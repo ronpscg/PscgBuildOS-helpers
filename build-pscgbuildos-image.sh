@@ -54,7 +54,6 @@ export_variables() {
 	export config_toplevel__arch 
 	export config_toplevel__arch_subarch
 
-	export config_toplevel__shared_artifacts
 	export config_imager__workdir_compressed
 	export config_imager__compress_installer_image 
 	export config_imager__installer_image_file 
@@ -69,42 +68,36 @@ export_variables() {
 }
 
 set_variables_conditionally() {
-	### toplevel paths 
-	: ${BUILD_OUT=$(readlink -f $BUILD_TOP/../..)/out-june}
-
-	: ${config_toplevel__rebuild_from_scratch_product=false}	# Delete the entire product build folder (BUILD_DIR)
-	: ${config_toplevel__rebuild_from_scratch_all=false} 		# Delete the entire BUILD_OUT product
-
-	: ${config_toplevel__downloads_base_path=${homedir}/dev/otaworkshop/downloads_dir}
-	: ${config_toplevel__caches_base_path=${homedir}/dev/otaworkshop/caches_dir}
-	: ${config_toplevel__caches_workdir_base_path=${homedir}/dev/otaworkshop/caches_workdir}
-
-	# The idea is to put in shared_artifacts something you may want to share with other hosts/people, such as images, running scripts etc.
-	: ${config_toplevel__shared_artifacts=${homedir}/shared_artifacts/}
+	# TODO main project: in this is temporarily set in override_imager_variables() both there and in 2025-aug-wrapper.sh I commented it out delibertely now
+	#                    there was nothing commented out in this function, except for the last lines which are a multicomment that also happen to have a variable example
+	### toplevel
+	#: ${config_toplevel__rebuild_from_scratch_product=false}	# Delete the entire product build folder (BUILD_DIR)
+	#: ${config_toplevel__rebuild_from_scratch_all=false} 		# Delete the entire BUILD_OUT product
 
 
 	### imager
-	: ${config_imager__workdir_compressed=$config_toplevel__shared_artifacts/${BUILD_IMAGE_VERSION}.tar.xz}
-
-	: ${config_imager__workdir_start_from_scratch=true}
-	: ${config_imager__installer_workdir_start_from_scratch=true}
-
-	: ${config_imager__create_installer_image=true}
-	: ${config_imager__compress_installer_image=false} # Unless you plan to push it somewhere or back it up, set to false by default
-	: ${config_imager__installer_image_file="$config_toplevel__shared_artifacts/$BUILD_IMAGE_VERSION-installer.img"} # path of the output file of the installer
 	
-	: ${config_imager__installer_image_file_tarball="${config_imager__installer_image_file}.tar.xz"} # installer file, compressed (in case you want to send it to someone). It is defined in imager.buildconfig and this line should be removed
+	#: ${config_imager__workdir_compressed=$config_toplevel__shared_artifacts/${BUILD_IMAGE_VERSION}.tar.xz}
 
+	#: ${config_imager__workdir_start_from_scratch=true}
+	#: ${config_imager__installer_workdir_start_from_scratch=true}
 
+	#: ${config_imager__create_installer_image=true}
+	#: ${config_imager__compress_installer_image=false} # Unless you plan to push it somewhere or back it up, set to false by default
+	#: ${config_imager__installer_image_file="$config_toplevel__shared_artifacts/$BUILD_IMAGE_VERSION-installer.img"} # path of the output file of the installer
+	
+	#: ${config_imager__installer_image_file_tarball="${config_imager__installer_image_file}.tar.xz"} # installer file, compressed (in case you want to send it to someone). It is defined in imager.buildconfig and this line should be removed
+
+	#**Everything above was already in the files of the main project
 
 	### qemu
-	: ${config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage.img}
-
-	: ${config_bsp__qemu_removable_media_path=$config_imager__installer_image_file}						# If you want to change things in the removable_media after insterting it, you should copy it somewhere else 
+	#: ${config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage.img}
+#TODO: THIS IS WHERE THE PROBLEMS ARE TONIGHT - commented out the next line to check didn't check yet
+#	: ${config_bsp__qemu_removable_media_path=$config_imager__installer_image_file}						# If you want to change things in the removable_media after insterting it, you should copy it somewhere else 
 	: ${config_bsp__qemu_storage_device_size_mib=$((500))} # for busyboxos you can work just fine with 6 for example...
 	: ${config_bsp__qemu_recreate_storage_device=true}
 	: ${config_bsp__qemu_copy_installer_image_to_removable_media=true}
-	: ${config_bsp__qemu_livecd_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd.img}	# it's not exactly livecd - it's using system.img as the storage
+	#: ${config_bsp__qemu_livecd_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd.img}	# it's not exactly livecd - it's using system.img as the storage
 
 	# Note: there is automatic calculation, but if you build a debian like distro, you will likely
 	# want to calculate config_imager__ext_partition_system_minimum_size_bytes yourself. Don't do it here,
