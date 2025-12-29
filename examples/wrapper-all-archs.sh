@@ -32,9 +32,11 @@ set_partition_layout_variables() {
 }	
 
 #
-# $1 ARCH (in busyboxos we don't play too much with the different variants - which makes it easier to follow, cf. debos)
+# Set some common variables for the buildsystem - mostly archs etc. 
+# Basically the same I just wanted to see that I avoid the tmp paths
+# $1 ARCH
 #
-busyboxos_imager_variables_by_arch() {
+imager_variables_by_arch() {
 	local arch=$1
 	# Implicitly sets the installer image full path
 	# (just showing the definition: ${config_imager__installer_image_file="$config_toplevel__shared_artifacts/$BUILD_IMAGE_VERSION-installer.img"} )
@@ -84,8 +86,14 @@ busyboxos_imager_variables_by_arch() {
 	: ${config_imager__workdir_start_from_scratch=true}		# Cleanup previous working directory
 	: ${config_imager__installer_workdir_start_from_scratch=true}	# Cleanup previous installer working directory
 	set +a
-	
-	# First demonstration: commented out to show defaults
+}
+
+#
+# $1 ARCH
+#
+busyboxos_imager_variables_by_arch() {
+	imager_variables_by_arch $@
+	# Demonstration of partition layout. Comment it out to use defaults. (the published videos showed both with and without it)
 	set_partition_layout_variables	
 }
 
@@ -99,6 +107,7 @@ build_debian() {
 	build_tasks=$2
 	ARCHS=$3
 	for ARCH in $ARCHS ; do
+		imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
 		export ARCH=$ARCH config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=$1
 		echo y | $NEXT_WRAPPER_SCRIPT $build_tasks
 	done
@@ -162,9 +171,9 @@ main() {
 	: ${config_buildtasks__do_pack_images=true}
 	set +a	
 
-	START=$(date)
-
 	export config_ramdisk__kexectools_include=false # The reason to put it here is that not all architectures support kexec, and we (potentially) want to show the building of everything
+
+	START=$(date)
 
 	#build_debian trixie buildall "$DEBIAN_ARCHS" # Seems to be OK - when I tested i386 I had to install firefox from the local cache on the system, I am not sure why. not sure about riscv - maybe something is wrong with the initramfs but it's strange because alpineos build works there. all of these used to work flawlessly
 	#build_debian sid buildall "$DEBIAN_PORTS_ARCHS" # Dec 25 25 - loongarch does not build seemlesly. It used to work for when Trixie was sid. 
@@ -177,8 +186,8 @@ main() {
 	#build_busyboxos buildall sparc64 # qemu-system-sparc64: -device virtio-blk-pci,drive=emmcdisk: PCI: no slot/function available for virtio-blk-pci, all in use or reserved
 	#build_debian trixie buildall riscv # There is a specific issue with RISC-V on this build, kernel panics with the ramdisk, not sure why. 6.17-rc2. 6.19-rc2 is fine.
 
-#	build_busyboxos buildall x86_64
-#	build_alpineos buildall x86_64
+	build_busyboxos buildall x86_64
+	build_alpineos buildall x86_64
 	build_debian trixie buildall x86_64
 
 	END=$(date)
