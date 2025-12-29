@@ -167,8 +167,8 @@ main() {
 	: ${TMP_BUT_PERSISTENT_TOP=${outdir}/tmp-but-persistent/PscgBuildOS}
 
 	# NOT SURE WHY THESE TWO ARE NEEDED (Dec29)
-	: ${config_buildtasks__do_generate_qemu_scripts=true}
-	: ${config_buildtasks__do_pack_images=true}
+	#: ${config_buildtasks__do_generate_qemu_scripts=true}
+	#: ${config_buildtasks__do_pack_images=true}
 	set +a	
 
 	export config_ramdisk__kexectools_include=false # The reason to put it here is that not all architectures support kexec, and we (potentially) want to show the building of everything
@@ -186,9 +186,11 @@ main() {
 	#build_busyboxos buildall sparc64 # qemu-system-sparc64: -device virtio-blk-pci,drive=emmcdisk: PCI: no slot/function available for virtio-blk-pci, all in use or reserved
 	#build_debian trixie buildall riscv # There is a specific issue with RISC-V on this build, kernel panics with the ramdisk, not sure why. 6.17-rc2. 6.19-rc2 is fine.
 
-	build_busyboxos buildall x86_64
+	build_busyboxos ramdisk-kernel x86_64
+	echo ok
 	build_alpineos buildall x86_64
 	build_debian trixie buildall x86_64
+	build_debian trixie buildall i386
 
 	END=$(date)
 	echo "Done."

@@ -3,49 +3,8 @@
 # The objective of this function is to be very clear on what is exported, before setting default variables
 #
 
-
-
-kernel_exports() {
-	export config_kernel__list_of_config_overrides	# set specific overrides from the command line. Useful for quickly trying out additional kernel features
-}
-
-
-# TODO: busybox the examples we set here put it to be true. Otherwise we don't need it at all.
-# NOTE: in busybox.buildconfig everything is exported with set -a. May export things more specifically
-override_busybox_variables() {
-	: ${config_busybox__do_config_if_already_built=true}	
-}
-busybox_exports() {
-	export config_busybox__do_config_if_already_built
-}
-
-
-#-----------------------------------------------------------------------------
-# This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
-# It also contains the template example for only building rootfs caches 
-# (without anything else. TODO: could make a similar mechanism for the rest of the projects. For kernel/busybox/U-Boot/EDK2 it's relatively simple. For some projects it's a bit more complex 
-#-----------------------------------------------------------------------------
 override_buildtasks_variables() {
-	: ${config_buildtasks__do_build_ramdisk=true} # without it there is no size estimate for the live installer	
-	: ${config_buildtasks__do_build_kernel_modules=true}
-	: ${config_buildtasks__do_build_kernel=true}
-	: ${config_buildtasks__do_build_rootfs=true}
-	: ${config_buildtasks__do_build_rootfs_caches_and_quit=false}
-	: ${config_buildtasks__do_pack_images=true}
-
-	# Note that this build task has also been defined in the build system - but that is not the best thing to do. may be cleaned up in time
-	if [ "${config_buildtasks__do_build_rootfs_caches_and_quit}" = "true" ] ; then
-		if [ ! "${config_distro}" = "pscg_debos" ] ; then
-			fatalError "config_buildtasks__do_build_rootfs_caches_and_quit is set to true, but the distro is not pscg_debos. Exiting."
-		fi
-		# This is a special case where we just want to build the rootfs caches, and not the kernel or modules
-		config_buildtasks__do_build_rootfs=true # will actually only do the prepass
-		config_buildtasks__do_build_kernel=false
-		config_buildtasks__do_build_kernel_modules=false
-		config_buildtasks__do_build_ramdisk=false
-		config_buildtasks__do_pack_images=false
-	fi
-
+	:
 }
 
 
@@ -155,20 +114,12 @@ example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
 }
 
 #-----------------------------------------------------------------------------
-# This should not be needed anymore, as the logic is to always source, and 
-# the build system itself exports everything it needs (otherwise, it is a bug and the build system should fix it. 
+# This is not needed anymore, as the logic is to always source, and 
+# the build system itself exports everything it needs (otherwise, it is a bug and the build system should fix it
 # it may happen, due to years of using wrappers, and never the build system directly, but I worked quite hard to prevent that, and I think I have)
 #-----------------------------------------------------------------------------
 wrapper_exports() {
-	#REMOVEDtoplevel_exports
-	#REMOVEDqemu_exports
-	#REMOVEDimager_exports	
-	#REMOVEDramdisk_exports		# This remains only to have a non-verbose cpio, and to not compress the cpio archive (both are intentionally not the default build system behavior)
-	#REMOVEDramdisk_exports_kexec_example	# specific to the Kexec example at my kexec talk, May 2025
-	#REMOVEDpscgdebos_exports
-	busybox_exports			# This remains because the example set override_busybox_variables=true - which is the opposite of the default. It will be reomved
-	kernel_exports			# This remains because this file sets config_kernel__list_of_config_overrides - it will be packaged in a specific example
-	#REMOVEDdistro_reuse_exports
+	:
 }
 
 #-----------------------------------------------------------------------------
@@ -181,11 +132,7 @@ wrapper_override_environment_variables() {
 	
 	override_qemu_cmdline_variables
 
-
-	override_busybox_variables
 	kernel_config_demonstrations_and_i_dont_know_what_but_i_will_check
-
-	config_imager__ext_partition_system_size_scale_factor=1.35 # TODO check in other places, add export	
 	
 	example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu
 
