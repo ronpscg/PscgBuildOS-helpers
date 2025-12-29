@@ -20,6 +20,9 @@ busybox_exports() {
 }
 
 
+#-----------------------------------
+# This has already been copied to the builder wip.buildconfig -so check there - basically everything there should be moved elsewhere
+#-----------------------------------
 override_imager_variables() {
 	# tmp is faster and easier on your storage whereas persistent is bigger. using tmpfs with huge stuff is a bad idea, so only use it if you have A LOT of RAM on your host
 	# decide where you want your files to go, and be consistent. What matters to the build system is the config_imager__... files themselves, so there is no need
@@ -27,12 +30,6 @@ override_imager_variables() {
 	: ${preferred_tmp_top=${TMP_BUT_PERSISTENT_TOP}} # When the images are huge, TMP_TOP might not be the best choice
 
 	: ${config_imager__installer_workdir=${preferred_tmp_top}/installer-workdir}
-	# Don't copy installer - saves time. Copying it - prevents direct modification of the installer image, which is useful for debugging without ruining an already built image
-	# It is confusing. It is qemu - and not imager, because the imager is done once it created the image.
-	# The thing here is that when we generate qemu images and artifacts, we may opt to also copy the installer image
-	# and create the disk image etc. This is the clean thing to do - but it both takes time and space.
-	#: ${config_bsp__qemu_copy_installer_image_to_removable_media=false} # TODAY
-	: ${config_bsp__qemu_copy_installer_image_to_removable_media=true}	 # TODAY
 
 	: ${config_imager__workdir_ext_partition_images=${TMP_TOP}/staging/wip-images}
 	
@@ -80,6 +77,11 @@ override_buildtasks_variables() {
 
 }
 
+
+#----------------------------------------------------------------------------
+# These were probably covered in the Graphics videos, and I leave them here 
+# now for the documentation purposes. I will get rid of all of those
+#-----------------------------------------------------------------------------
 
 # NOTE: for lxqt with install recommends (without it's ~600-700MB, but does not have x11-dbus, and quite a few other things), even 400GB --> factor of 10.15 --> ~3.7GB is not enough.
 #   	    lxqt warns it requires:
@@ -234,13 +236,6 @@ override_ramdisk_variables_for_kexec_example() {
 	config_ramdisk__more_files_to_copy_dst="/more-kernels" # designed mostly to ilustrate kexec - this is a place to copy a capture kernel to (in the target)
 	config_ramdisk__directories_to_create="/more-kernels"
 }
-ramdisk_exports_kexec_example() {
-	# The folowing are used to copy files to the ramdisk during the course of the build, without affecting the build system
-	# If things work to your satisfaction, you can generate organized reicpes or update the respective files in the build system
-	export config_ramdisk__directories_to_create	# create additional directories in the ramdisk as part of a particular build
-	export config_ramdisk__more_files_to_copy_src	# copy files from these locations to the ramdisk
-	export config_ramdisk__more_files_to_copy_dst   # copy to this particula locatin designed mostly to ilustrate kexec - this is a place to copy a capture kernel to (in the target)
-}
 
 # essentially they set IKCONFIG IKCONFIG_PROC and CONFIG_MODULES and have comments that explain why they are needed
 # I will do another kernel config pass at another time.
@@ -291,7 +286,7 @@ kernel_config_demonstrations_and_i_dont_know_what_but_i_will_check() {
 	#PACKET=y
 	#UNIX=y
 }
-/
+
 example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
 	config_kernel__list_of_config_overrides+=" FB=y FB_VESA=y FRAMEBUFFER_CONSOLE=y  LOGO=y  LOGO_LINUX_CLUT224=y"
 
@@ -332,7 +327,7 @@ wrapper_exports() {
 	#REMOVEDqemu_exports
 	#REMOVEDimager_exports	
 	#REMOVEDramdisk_exports		# This remains only to have a non-verbose cpio, and to not compress the cpio archive (both are intentionally not the default build system behavior)
-	ramdisk_exports_kexec_example	# specific to the Kexec example at my kexec talk, May 2025
+	#REMOVEDramdisk_exports_kexec_example	# specific to the Kexec example at my kexec talk, May 2025
 	#REMOVEDpscgdebos_exports
 	busybox_exports			# This remains because the example set override_busybox_variables=true - which is the opposite of the default. It will be reomved
 	kernel_exports			# This remains because this file sets config_kernel__list_of_config_overrides - it will be packaged in a specific example
@@ -344,17 +339,13 @@ wrapper_exports() {
 #-----------------------------------------------------------------------------
 wrapper_override_environment_variables() {
 	#REMOVEDoverride_toplevel_variables
-	override_imager_variables	# this can be useful in a wrapper as it can help saving a lot of time for some tasks
+	override_imager_variables	# this can be useful in a wrapper as it can help saving a lot of time for some tasks - it is in the WIP one though - but the WIP does not work for Debian if called from within this framework (otherwise it is fine!) - so the "problem is in build-pscgbuildos-image.sh  TODO: fix it another time when I'm fresh
 	#REMOVEDoverride_ramdisk_variables
 	#REMOVEDoverride_pscgdebos_variables_init_frameworks
 		
 	override_buildtasks_variables	# This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
 
-	: ${config_bsp__qemu_removable_media_path=$TMP_BUT_PERSISTENT_TOP/removable_media.img}
-
-
-	
-	override_storage_and_installer_variables_for_some_dev_speedup
+	override_storage_and_installer_variables_for_some_dev_speedup # TODO: this is completely commented out - but the comments there are useful. 
 	
 	override_qemu_cmdline_variables
 
