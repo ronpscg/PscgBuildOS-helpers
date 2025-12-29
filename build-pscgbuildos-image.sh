@@ -141,6 +141,12 @@ toplevel__set_build_image_version() {
 }
 
 main() {
+	#----tmp
+	. ./staging-base.sh
+	set_standard_default_values_distro_reuse
+	distro_reuse_exports
+	set_standard_default_values_wip
+	#eotmp
 	init_main_builder_env			# Initialize the main builder environment
 	export_variables			# Export important variables
 
