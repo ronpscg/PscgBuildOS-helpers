@@ -4,16 +4,6 @@
 #
 
 
-toplevel_exports() {
-	export config_buildtasks__do_build_kernel
-	export config_buildtasks__do_build_rootfs
-	export config_buildtasks__do_build_rootfs_caches_and_quit
-	export config_buildtasks__do_build_kernel_modules
-	export config_buildtasks__do_build_ramdisk
-	export config_buildtasks__do_pack_images
-
-	export fetch_to_existing_folder_strategy # can be used to decide what to do with existing folders as per base_fetch_unpack.sh
-}
 
 kernel_exports() {
 	export config_kernel__list_of_config_overrides	# set specific overrides from the command line. Useful for quickly trying out additional kernel features
@@ -62,6 +52,11 @@ override_imager_variables() {
 
 }
 
+#-----------------------------------------------------------------------------
+# This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
+# It also contains the template example for only building rootfs caches 
+# (without anything else. TODO: could make a similar mechanism for the rest of the projects. For kernel/busybox/U-Boot/EDK2 it's relatively simple. For some projects it's a bit more complex 
+#-----------------------------------------------------------------------------
 override_buildtasks_variables() {
 	: ${config_buildtasks__do_build_ramdisk=true} # without it there is no size estimate for the live installer	
 	: ${config_buildtasks__do_build_kernel_modules=true}
@@ -70,8 +65,19 @@ override_buildtasks_variables() {
 	: ${config_buildtasks__do_build_rootfs_caches_and_quit=false}
 	: ${config_buildtasks__do_pack_images=true}
 
+	# Note that this build task has also been defined in the build system - but that is not the best thing to do. may be cleaned up in time
+	if [ "${config_buildtasks__do_build_rootfs_caches_and_quit}" = "true" ] ; then
+		if [ ! "${config_distro}" = "pscg_debos" ] ; then
+			fatalError "config_buildtasks__do_build_rootfs_caches_and_quit is set to true, but the distro is not pscg_debos. Exiting."
+		fi
+		# This is a special case where we just want to build the rootfs caches, and not the kernel or modules
+		config_buildtasks__do_build_rootfs=true # will actually only do the prepass
+		config_buildtasks__do_build_kernel=false
+		config_buildtasks__do_build_kernel_modules=false
+		config_buildtasks__do_build_ramdisk=false
+		config_buildtasks__do_pack_images=false
+	fi
 
-	: ${fetch_to_existing_folder_strategy=donothing}
 }
 
 
@@ -322,7 +328,7 @@ example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
 # it may happen, due to years of using wrappers, and never the build system directly, but I worked quite hard to prevent that, and I think I have)
 #-----------------------------------------------------------------------------
 wrapper_exports() {
-	toplevel_exports
+	#REMOVEDtoplevel_exports
 	#REMOVEDqemu_exports
 	#REMOVEDimager_exports	
 	#REMOVEDramdisk_exports		# This remains only to have a non-verbose cpio, and to not compress the cpio archive (both are intentionally not the default build system behavior)
@@ -338,28 +344,15 @@ wrapper_exports() {
 #-----------------------------------------------------------------------------
 wrapper_override_environment_variables() {
 	#REMOVEDoverride_toplevel_variables
-	override_imager_variables
+	override_imager_variables	# this can be useful in a wrapper as it can help saving a lot of time for some tasks
 	#REMOVEDoverride_ramdisk_variables
 	#REMOVEDoverride_pscgdebos_variables_init_frameworks
 		
-	override_buildtasks_variables
-# config_buildtasks__do_build_kernel=true
-# config_buildtasks__do_build_kernel_modules=true
-# config_buildtasks__do_build_rootfs=false
+	override_buildtasks_variables	# This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
+
 	: ${config_bsp__qemu_removable_media_path=$TMP_BUT_PERSISTENT_TOP/removable_media.img}
 
 
-	if [ "${config_buildtasks__do_build_rootfs_caches_and_quit}" = "true" ] ; then
-		if [ ! "${config_distro}" = "pscg_debos" ] ; then
-			fatalError "config_buildtasks__do_build_rootfs_caches_and_quit is set to true, but the distro is not pscg_debos. Exiting."			
-		fi
-		# This is a special case where we just want to build the rootfs caches, and not the kernel or modules
-		config_buildtasks__do_build_rootfs=true # will actually only do the prepass
-		config_buildtasks__do_build_kernel=false
-		config_buildtasks__do_build_kernel_modules=false
-		config_buildtasks__do_build_ramdisk=false
-		config_buildtasks__do_pack_images=false
-	fi
 	
 	override_storage_and_installer_variables_for_some_dev_speedup
 	
