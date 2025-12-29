@@ -5,8 +5,18 @@
 #
 
 defaults() {
-	: ${BUILD_IMAGE_VERSION=aug17-build-image-version-riscv}
-	: ${ENABLE_GRAPHICS=true}
+	# These defaults can be overridden. However do note that since the ENABLE_GRAPHICS feature is sanity tested for the potential inclusion of huge libraries,
+	# only trivial things are tested so our current behavior for this feature is to mean we only add it on PscgDebOS.
+	# There are exercises in the PSCG courses that tackle exactly that (graphics withotu systemd, weston, light display managers etc.) but for now they are left out of the open sourced published project
+	if [ "$config_distro" = "pscg_debos" ] ; then
+		: ${ENABLE_GRAPHICS=true}
+		: ${config_imager__installer_media_size_sectors=$((6*1024*1024*1024/512))}
+		# We could also add another example (of a browser kiosk device at the time of writing it)
+		#config_pscgdebos__extra_layers_file=$PWD/more-layers/more-pscg_debos-layers.txt
+		#: ${ENABLE_BROWSERS=true}
+	else
+		: ${ENABLE_GRAPHICS=false}
+	fi
 	: ${ENABLE_BROWSERS=false}
 	: ${ENABLE_SOUND=true}	# although no one uses it as is
 

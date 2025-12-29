@@ -38,11 +38,12 @@ busyboxos_imager_variables_by_arch() {
 	local arch=$1
 	# Implicitly sets the installer image full path
 	# (just showing the definition: ${config_imager__installer_image_file="$config_toplevel__shared_artifacts/$BUILD_IMAGE_VERSION-installer.img"} )
-	export BUILD_IMAGE_VERSION=aug19_busyboxos_image_2308-${arch}
-	# Sets the storage image
-	export config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage-${arch}.img
-	# Sets the livecd by copying $config_imager__workdir_ext_partition_images/system.img to $config_bsp__qemu_livecd_storage_device_path
-	export config_bsp__qemu_livecd_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd-${arch}.img
+	if [ false = "I put this to avoid config_toplevel__shared_artifacts not being bound due to set -euo pipefail" ] ; then
+		# Sets the storage image
+		export config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage-${arch}.img
+		# Sets the livecd by copying $config_imager__workdir_ext_partition_images/system.img to $config_bsp__qemu_livecd_storage_device_path
+		export config_bsp__qemu_livecd_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd-${arch}.img
+	fi #seeif
 
 	# More examples that are exaggerated (using ARCH=i386, as it is just faster to run the target itself for)
 	# Copies to removable media <if...>
@@ -176,8 +177,10 @@ main() {
 	#build_busyboxos buildall sparc64 # qemu-system-sparc64: -device virtio-blk-pci,drive=emmcdisk: PCI: no slot/function available for virtio-blk-pci, all in use or reserved
 	#build_debian trixie buildall riscv # There is a specific issue with RISC-V on this build, kernel panics with the ramdisk, not sure why. 6.17-rc2. 6.19-rc2 is fine.
 
-	#build_debian trixie buildall x86_64
-	#build_busyboxos buildall x86_64
+#	build_busyboxos buildall x86_64
+#	build_alpineos buildall x86_64
+	build_debian trixie buildall x86_64
+
 	END=$(date)
 	echo "Done."
 	echo "$START"
