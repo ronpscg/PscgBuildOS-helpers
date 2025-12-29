@@ -20,35 +20,6 @@ busybox_exports() {
 }
 
 
-#-----------------------------------
-# This has already been copied to the builder wip.buildconfig -so check there - basically everything there should be moved elsewhere
-#-----------------------------------
-override_imager_variables() {
-	# tmp is faster and easier on your storage whereas persistent is bigger. using tmpfs with huge stuff is a bad idea, so only use it if you have A LOT of RAM on your host
-	# decide where you want your files to go, and be consistent. What matters to the build system is the config_imager__... files themselves, so there is no need
-	# to have it exported or so.
-	: ${preferred_tmp_top=${TMP_BUT_PERSISTENT_TOP}} # When the images are huge, TMP_TOP might not be the best choice
-
-	: ${config_imager__installer_workdir=${preferred_tmp_top}/installer-workdir}
-
-	: ${config_imager__workdir_ext_partition_images=${TMP_TOP}/staging/wip-images}
-	
-	: ${BUILD_IMAGE_VERSION=aug16-build-image-version}	# the dependent (in next lines) will be overridden
-	: ${config_imager__version=$BUILD_IMAGE_VERSION}	# identical to BUILD_IMAGE_VERSION
-	: ${config_imager__workdir=${preferred_tmp_top}/staging/installer_fs_workdir}	# The file system contents of the installation media and the OTA tarball will be populated here
-	: ${config_imager__workdir_compressed=${preferred_tmp_top}/staging/${BUILD_IMAGE_VERSION}.tar.xz} # this is overridden
-	: ${config_imager__recovery_tarball=$config_imager__workdir_compressed}
-	: ${config_imager__installer_workdir="${preferred_tmp_top}/staging/installer-workdir"}
-
-	# Useful for staging while working on more installer features. So far, all we need is in the main image so delete them most probably
-	# : ${config_imager__staging_list_of_image_creation_scripts_to_run="make-noninstaller-storage.sh"} # scripts to run under the staging/ dir
-	#: ${config_imager__staging_do_non_staging_stuff="false"} # true if you want to run the $config_imager__list_of_image_creation_scripts_to_run
-	#: ${config_imager__list_of_image_creation_scripts_to_run=""} # staging - for now either installer or bootable storage, mutually exclusive	
-
-	: ${config_imager__installer_media_size_sectors=$((6*$SECTORS_PER_GIB))}
-
-}
-
 #-----------------------------------------------------------------------------
 # This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
 # It also contains the template example for only building rootfs caches 
