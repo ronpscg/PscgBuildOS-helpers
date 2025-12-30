@@ -24,6 +24,9 @@
 # [4. Where additional layers and components are located (you are expected to provide them externally - we can't know ahead of time what you want to include) ]
 #
 init_main_builder_env() {
+	: ${config_toplevel__include_date_in_build_version=false} # Set to false to replace the image files after each build - this can be very useful and save a lot of storage space
+
+	### base dirs
 	if [ -n "$SUDO_HOME" ] ; then
 		: ${homedir=$SUDO_HOME}
 	elif [ -n "$SUDO_USER" ] ; then
@@ -31,12 +34,15 @@ init_main_builder_env() {
 	else
 		: ${homedir=$HOME}
 	fi
+	# outdir is used here for defining TMP_TOP (which is defined in the same way in the build system, but we want to set the log file prior to sourcing commonEnv) and TMP_BUT_PERSISTENT_TOP
+	# it only affects variables that could be overridden, and is used to give them default values, so there is no point in making it modifable or exporting it
+	outdir=${homedir}/PscgBuildOS/out 
 	
 	### build system source directory, distro type, and version setting	
 	: ${BUILD_TOP=${homedir}/dev/otaworkshop/PscgBuildOS}
-	: ${TMP_TOP=/tmp/PscgBuildOS}	
-	: ${TMP_BUT_PERSISTENT_TOP=${homedir}/tmp-but-persistent/PscgBuildOS}
-
+	: ${TMP_TOP=${outdir}/tmp/PscgBuildOS}
+	: ${TMP_BUT_PERSISTENT_TOP=${outdir}/tmp-but-persistent/PscgBuildOS}
+        
 	export logFile=${logFile-${TMP_TOP}/$(basename -s .sh $0).log}
 	mkdir -p $TMP_TOP || { echo "Cannot create $TMP_TOP" ; exit 1 ; }	
 	. $BUILD_TOP/builder/commonEnv.sh || { echo "Cannot source common environment file" ; exit 1 ; }
@@ -108,31 +114,6 @@ set_variables_conditionally() {
 }
 
 
-# I think this should go to the build system itself
-toplevel__set_build_image_version() {
-	: ${BUILD_IMAGE_VERSION_EXTRA=""}
-
-	# Make things more readable for arch/subarch deciding etc.
-	if [ -z "$config_toplevel__arch" ] ; then
-		: ${BUILD_IMAGE_VERSION="${config_distro}-${ARCH:-$(uname -m)}${BUILD_IMAGE_VERSION_EXTRA}"}
-	else
-		# consider subarch only if config_toplevel_arch is explicitly stated
-		if [ -z "$ARCH" ] ; then
-			archsubarch=$config_toplevel__arch
-		else
-			if [ ! "$ARCH" = "$config_toplevel__arch" ] ; then
-				fatalError "ARCH and  config_toplevel__arch don't agree"
-			fi
-			archsubarch=$ARCH
-		fi
-		
-		if [ -n "$config_toplevel__arch_subarch" ] ; then
-			archsubarch="${archsubarch}-$config_toplevel__arch_subarch"
-		fi
-		: ${BUILD_IMAGE_VERSION="${config_distro}-${archsubarch}${BUILD_IMAGE_VERSION_EXTRA}"}
-	fi
-}
-
 main() {
 	#----tmp
 	. ./staging-base.sh
@@ -143,7 +124,6 @@ main() {
 	init_main_builder_env			# Initialize the main builder environment
 	export_variables			# Export important variables
 
-	toplevel__set_build_image_version	# (will likely move to the build system) # Set the build image version based on the configuration and environment variables
 
 	set_variables_conditionally		# Set variables conditionally, unless they are already set by the environment
 
