@@ -13,12 +13,14 @@ override_buildtasks_variables() {
 override_storage_and_installer_variables_for_some_dev_speedup() {
 	# the reason to set the following to false would be significant buildtime speedup 
 	# if you just want to have a livecd but not an installer/OTA/recovery image
+	# This is what simple_dev_optimization_4 in the last-line script does if enabled
 	: ${config_imager__create_ota_image=false}
 
 	# We are creating a livecd where we just copy the system.img and pack it in the resulting image - and we don't want qemu to recreate it.
 	# If we decide to create both a livecd and and installer image - we will use other variables
 	# The reason for separating the livecd is that I wanted to avoid the time it takes to compress the image, which is (re)used for the OTA update.
 	# Otherwise, I would make the livecd and the installer the same image (and I might do it again - I used to have this mode in the past but it was not popular with customers)
+	# This is what simple_dev_optimization_2 in the last-line script does if enabled
 	: ${config_bsp__qemu_recreate_storage_device=false}
 	
 	# Ideally, with a lot of memory, this would go under /tmp. HOWEVER, in the graphics builds, /tmp/staging is 10GB, and for a 32GB RAM machine, it will be exhausted
@@ -157,7 +159,7 @@ wrapper_override_environment_variables() {
 	override_buildtasks_variables					# This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
 	override_qemu_cmdline_variables					# Examples of useful QEMU command line modifications
 	override_kernel_configs 					# Examples of useful Linux kernel command line modifications
-	#override_storage_and_installer_variables_for_some_dev_speedup	# NOTE: even if this is completely commented out - the comments there are useful.  
+	#override_storage_and_installer_variables_for_some_dev_speedup	# NOTE: even if this is completely commented out - the comments there are useful. You have more of those in the example in build-pscgbuildos-image.sh
 	
 	if [ "$distro" = "pscg_debos" ] ; then
 		# one could select to set the disk image size, partition sizes or scale factors by the distro
