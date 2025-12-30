@@ -1,53 +1,67 @@
 #!/bin/bash
-#
-# The objective of this function is to be very clear on what is exported, before setting default variables
-#
 
 override_buildtasks_variables() {
 	:
 }
 
 
+#-------------------------------------------------------------
+# This should be optional, and give you ideas. Do not enable
+# the things here before you have had experience with the 
+# build system
+#-------------------------------------------------------------
 override_storage_and_installer_variables_for_some_dev_speedup() {
-	# If not set explicitly, for the live image part (I checked now for non staging parts)  you will see that it complains on the default which is 500.
-	# A huge, graphics image, takes much more
-	#: ${config_bsp__qemu_storage_device_size_mib=8000}	
+	# the reason to set the following to false would be significant buildtime speedup 
+	# if you just want to have a livecd but not an installer/OTA/recovery image
+	: ${config_imager__create_ota_image=false}
 
 	# We are creating a livecd where we just copy the system.img and pack it in the resulting image - and we don't want qemu to recreate it.
 	# If we decide to create both a livecd and and installer image - we will use other variables
 	# The reason for separating the livecd is that I wanted to avoid the time it takes to compress the image, which is (re)used for the OTA update.
 	# Otherwise, I would make the livecd and the installer the same image (and I might do it again - I used to have this mode in the past but it was not popular with customers)
-	if false ; then
 	: ${config_bsp__qemu_recreate_storage_device=false}
-	: ${config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd.img}
-	fi
-
+	
 	# Ideally, with a lot of memory, this would go under /tmp. HOWEVER, in the graphics builds, /tmp/staging is 10GB, and for a 32GB RAM machine, it will be exhausted
 	# using tmpfs is much faster than using storage
 	# on the other hand, using storage can have an advantage of persisting after reboot (if you want to get back to your development or games, just to see your tmp files gone...)
 	#: ${config_bsp__qemu_storage_device_path=${homedir}/pscgbuildos-builds/pscgbuildos_storage.img}
+
+	# The next comments are relevant, but perhaps better left out of this section
+	# Image size can also affect the build time, if we allocate a huge disk (for some systems that do not behave nicely with sparse files)
+	# If not set explicitly, for the live image part (I checked now for non staging parts)  you will see that it complains on the default which is 500.
+	# A huge, graphics image, takes much more
+	#: ${config_bsp__qemu_storage_device_size_mib=8000}	
+
+}
+
+#---------------------------------------------------------------------------------------------------------
+# Features may affect your packages, kernel and QEMU command line, obviously image sizes, and more
+# In this example, all of the listed variables have effect in QEMU in all distros (all with default
+# sets of parameters that you can change, this is an example), because:
+# 1. ENABLE_NETWORK enables network devices in QEMU
+# 2. ENABLE_GRAPHICS enables a display and DRM (and in pscg_debos can affect selecting display managers...)
+# 3. ENABLE_SOUND enables sound devices in QEMU, which are noticable in the initramfs (ramdisk) as well.
+#---------------------------------------------------------------------------------------------------------
+override_default_features() {
+	: ${ENABLE_NETWORK=true}
+	: ${ENABLE_GRAPHICS=true}
+	: ${ENABLE_SOUND=true}
 }
 
 
-
-
+#----------------------------------------------------------------------------------------------------------
+# Decide set of QEMU command line parameters, according to the selected features
+#----------------------------------------------------------------------------------------------------------
 override_qemu_cmdline_variables() {
-	: ${ENABLE_NETWORK=true}	# local to the helper script. At least for now. Affects runqemu parameters
-	: ${ENABLE_GRAPHICS=false}	# local to the helper script. At least for now. Affects runqemu parameters
-
-	# TODO: ran with:  config_buildtasks__do_pack_images=false config_distro__add_oot_ota_code=true config_buildtasks__do_build_rootfs=false config_pscgdebos__extra_layers_file=$PWD/more-layers.txt   ENABLE_GRAPHICS=true ENABLE_BROWSERS=true config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=sid ARCH=i386   ./2025-aug-prep.sh 
-	: ${ENABLE_SOUND=false}		# local to the helper script. At least for now. Affects runqemu parameters
 	if [ "$ENABLE_GRAPHICS" = "true" ] ; then
 		# set some defaults
-		: ${config_bsp_qemu__devices_graphics_params="-display gtk,gl=on -device virtio-gpu -vga none"} 		# e.g.: -display gtk,gl=on -device virtio-gpu -vga none		
-		# TODO: input devices don't work on the same architectures. -usbdevice tablet only works on x86_64 and i386
-		# usb-mouse just doesn't work, so we use usb-tablet instead
-		#: ${config_bsp_qemu__devices_input_params="-usbdevice tablet"} 	 		# e.g.: -usbdevice tablet"
-		: ${config_bsp_qemu__devices_input_params="-device qemu-xhci,id=xhci -device usb-tablet,bus=xhci.0,port=1 -device usb-kbd,bus=xhci.0,port=2"} # only the x86 devices have -usbdevice tablet
+		: ${config_bsp_qemu__devices_graphics_params="-display gtk,gl=on -device virtio-gpu -vga none"}
+		# note that some input devices don't work on some architectures in some versions
+		: ${config_bsp_qemu__devices_input_params="-device qemu-xhci,id=xhci -device usb-tablet,bus=xhci.0,port=1 -device usb-kbd,bus=xhci.0,port=2"}
 		: ${config_bsp_qemu__devices_network_params_0=""}	# placeholder for more devices
 		: ${config_bsp_qemu__devices_more_devices_params_0=""}	# placeholder for more devices
 		: ${config_bsp_qemu__devices_more_devices_params_1=""}	# placeholder for more devices
-		: ${config_bsp_qemu__kernel_cmdline=""}					# default command line - some more defaults will be appended to it unless COMPLETE_COMMAND_LINE_OVERRIDE=true
+		: ${config_bsp_qemu__kernel_cmdline=""}			# default command line - some more defaults will be appended to it unless config_bsp_qemu__complete_command_line_override=true
 	else
 		# set some defaults
 		: ${config_bsp_qemu__devices_graphics_params="-display none"}
@@ -58,20 +72,17 @@ override_qemu_cmdline_variables() {
 		: ${config_bsp_qemu__kernel_cmdline=""}
 	fi
 
-	ENABLE_SOUND=true
 	if [ "$ENABLE_SOUND" = "true" ] ; then
 		# Intel SND device
 		if [ $ARCH = "x86_64" ] || [ $ARCH = "i386" ] ; then
 			# has more requirements in RISCV, and since virtio works, we don't need that
 			# It does work, and it should work on all architectures. Commenting it out just because I prefer to use virtio eitherway
 			# : ${config_bsp_qemu__devices_audio_params=" -device intel-hda -audio pipewire,id=snd0 -device hda-duplex"}
-			config_kernel__list_of_config_overrides+=" SND_HDA_GENERIC=y"
 			:
 		fi
 
 		# Virtio SND device
 		config_bsp_qemu__devices_audio_params="-device virtio-sound-pci -audio pipewire,id=snd0"
-		config_kernel__list_of_config_overrides+=" SND_VIRTIO=y"
 	fi
 
 	if [ "$ENABLE_NETWORK" = "true" ] ; then
@@ -84,33 +95,49 @@ override_qemu_cmdline_variables() {
 		: ${config_bsp_qemu__devices_network_params_0=""}	# placeholder for more devices
 	fi
 
-	: ${config_bsp_qemu__complete_command_line_override="false"}
 	
 	# Graphics definitely requires more memory than QEMU defaults. smp is nice to have
 	: ${config_bsp__qemu_num_cpus="-smp 2"}					# to specify: -smp <count>
 	: ${config_bsp__qemu_memory="-m 4g"}					# to specify -m <size, e.g. 4G etc.>
-	#: ${config_bsp_qemu__devices_console_params="-serial mon:stdio"}		# to speficy -nographic , -serial mon:stdio etc.
-
-	# the reason to set the following to false would be significant buildtime speedup 
-	# if you just want to have a livecd but not an installer/OTA/recovery image
-	: ${config_imager__create_ota_image=false}
+	#: ${config_bsp_qemu__devices_console_params="-serial mon:stdio"}	# to speficy -nographic , -serial mon:stdio etc.
 }
 
-# essentially they set IKCONFIG IKCONFIG_PROC and CONFIG_MODULES and have comments that explain why they are needed
-# I will do another kernel config pass at another time.
-# I think that I made this when I used more minimal configs that build much faster, but I don't remember when and how I did it
-kernel_config_demonstrations_and_i_dont_know_what_but_i_will_check() {
+kernel_config_basic_demonstrations() {
 	config_kernel__list_of_config_overrides+=" IKCONFIG=y IKCONFIG_PROC=y"
 	config_kernel__list_of_config_overrides+=" MODULES=y"
+	: ${config_bsp_qemu__complete_command_line_override="false"}
 }
 
-example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu() {
-	config_kernel__list_of_config_overrides+=" FB=y FB_VESA=y FRAMEBUFFER_CONSOLE=y  LOGO=y  LOGO_LINUX_CLUT224=y"
-	config_kernel__list_of_config_overrides+=" INPUT_EVDEV=y" # required for input in weston
+
+#----------------------------------------------------------------------------------------------------------
+# Decide set of Linux kernel command line parameters, according to the selected features
+#----------------------------------------------------------------------------------------------------------
+kernel_config_qemu_graphics_audio_and_peripherals_demonstrations() {
+	if [ "$ENABLE_GRAPHICS" = "true" ] ; then
+		config_kernel__list_of_config_overrides+=" FB=y FB_VESA=y FRAMEBUFFER_CONSOLE=y  LOGO=y  LOGO_LINUX_CLUT224=y"
+		config_kernel__list_of_config_overrides+=" INPUT_EVDEV=y" # required for input in weston
 	
-	config_kernel__list_of_config_overrides+=" FB_CIRRUS=y DRM_VIRTIO_GPU=y"
-	config_kernel__list_of_config_overrides+=" DRM=y" # Without this you will have linkage probems as stated above!
-	config_kernel__list_of_config_overrides+=" DRM_FBDEV_EMULATION=y" #  This is not necessary - just for the VTs...
+		config_kernel__list_of_config_overrides+=" FB_CIRRUS=y DRM_VIRTIO_GPU=y"
+		config_kernel__list_of_config_overrides+=" DRM=y"
+		config_kernel__list_of_config_overrides+=" DRM_FBDEV_EMULATION=y" #  This is not necessary - just for the VTs...
+	fi
+
+	if [ "$ENABLE_SOUND" = "true" ] ; then
+		# Intel SND device
+		if [ $ARCH = "x86_64" ] || [ $ARCH = "i386" ] ; then
+			# We don't need this if we use virtio, but it's a small addition, doesn't hurt, and if virtio doesn't work on some kernels (< v5.13), this should still work
+			config_kernel__list_of_config_overrides+=" SND_HDA_GENERIC=y"
+		fi
+
+		# Virtio SND device
+		config_kernel__list_of_config_overrides+=" SND_VIRTIO=y"
+	fi
+
+}
+
+override_kernel_configs() {
+	kernel_config_basic_demonstrations
+	kernel_config_qemu_graphics_audio_and_peripherals_demonstrations
 }
 
 #-----------------------------------------------------------------------------
@@ -126,21 +153,18 @@ wrapper_exports() {
 # This is where you would want to override the environment variables if you want to wrap the build-image.sh (main project) or build-pscgbuildos-image.sh (the last-line wrapper)
 #-----------------------------------------------------------------------------
 wrapper_override_environment_variables() {
-	override_buildtasks_variables	# This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
-
-	override_storage_and_installer_variables_for_some_dev_speedup # TODO: this is completely commented out - but the comments there are useful. 
+	override_default_features					# This can be used to control some features that the built device has or doesn't
+	override_buildtasks_variables					# This can be useful in a wrapper as it can help saving a lot of time for some tasks. 
+	override_qemu_cmdline_variables					# Examples of useful QEMU command line modifications
+	override_kernel_configs 					# Examples of useful Linux kernel command line modifications
+	#override_storage_and_installer_variables_for_some_dev_speedup	# NOTE: even if this is completely commented out - the comments there are useful.  
 	
-	override_qemu_cmdline_variables
-
-	kernel_config_demonstrations_and_i_dont_know_what_but_i_will_check
-	
-	example_more_kernel_qemu_graphics_related_and_notes_about_virtiogpu
-
-	
-
-	# one could select to set the partition sizes or scale factors by the distro - we'll look at it later
 	if [ "$distro" = "pscg_debos" ] ; then
-		:  # export config_imager__ext_partition_system_size_scale_factor=1.15 
+		# one could select to set the disk image size, partition sizes or scale factors by the distro
+		# This example will not set anything by default, just show an example. Another exapmle that sources this file (directly or indirectly) will be provided
+		# : ${config_imager__ext_partition_system_size_scale_factor=1.35}
+		# : ${config_bsp__qemu_storage_device_size_mib=8000}
+		:
 	fi
 
 	# just for now while testing, to stop. easily removed, will be removed
@@ -151,14 +175,28 @@ wrapper_override_environment_variables() {
 # A template example of a wrapper, should you want to use it
 #-------------------------------------------------------------------
 wrapper_main() {
+	#
+	# The MAIN_HELPER_SCRIPT will put the minimal additions that are reasonable to always include when you work a lot with the build system,
+	# on top of the build system entry point which is stand-alone, and does not require any wrappers, which is $BUILD_TOP/build-image.sh
+	# We first initialize its environment, to have the log available early, for example. Then, we add our logic (documented further down this function),
+	# and then we call the MAIN_HELPER_SCRIPT's main() function, which in turn sources $BUILD_TOP/build-image.sh and invokes the build system
+	#
 	MAIN_HELPER_SCRIPT=./build-pscgbuildos-image.sh
 	. $MAIN_HELPER_SCRIPT || { echo "Failed to source $MAIN_HELPER_SCRIPT"; exit 1; }
 	init_main_builder_env
-	
+	#
+	# This is where most of your code or modifications would go
+	#
 	wrapper_override_environment_variables "$@"
-	wrapper_exports		# this should not be called as all exports should be done in the build system itself but we still need to organize that and that will be a lot of changes
+	#	
+	# wrapper_exports is optional and the function would usually do nothing as the build system should export everything that is 
+	# necessary for its components (and if not, or you add some new features, you need to be mindful of that and fix it!)
+	#
+	wrapper_exports 
 
+	#
 	# Call the main function of the main helper script
+	#
 	main "$@"
 }
 
