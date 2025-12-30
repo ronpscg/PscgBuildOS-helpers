@@ -37,9 +37,14 @@ set_partition_layout_variables() {
 # $1 ARCH
 #
 imager_variables_by_arch() {
+	# ABOVE the return 0 are the variables that are currently needed (because of the other defaults)
+	# I wlil create a different path, deliberately 
+	local arch=$1
+	TMP_BUT_PERSISTENT_TOP_HACK=$homedir/PscgBuildOS/latehacks
+	export config_bsp__qemu_removable_media_path=$TMP_BUT_PERSISTENT_TOP_HACK/removable_media-${arch}.img
+	
 	return 0 # Demonstration that we can remove this function alltogether BUT THEN logs etc. go to tmp
 
-	local arch=$1
 
 	# TMP_TOP is used in the main script, and is defined here to avoid set -u errors.  TMP_BUT_PERSISTENT_TOP is an example. One can remove this function altogheter.
 	: ${TMP_TOP=${outdir}/tmp/PscgBuildOS}
@@ -163,7 +168,8 @@ main() {
 	#build_busyboxos ramdisk-kernel x86_64
 	#build_alpineos buildall x86_64
 	#build_debian trixie buildall x86_64
-	build_debian trixie buildall i386
+	build_busyboxos buildall x86_64
+	#build_debian trixie buildall i386
 
 	END=$(date)
 	echo "Done."

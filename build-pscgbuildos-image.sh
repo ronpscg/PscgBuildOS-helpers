@@ -81,6 +81,69 @@ export_variables() {
 	export logFile
 }
 
+#------------------------------------------------------------------------------------------------------------------------------
+# Reusing artifacts, when appropriate, can save a lot of time during builds.
+# The disadvantage can be that if you modify something for one distro, you could modify it, without wanting,
+# for the others, while working on the same shared code, or artifacs from the same archietcture.
+# If you always rebuild everything, it doesn't matter at all. I use the system mostly to build what I need
+# SUPER FAST, so these are important parts of my build considerations.
+# Note that we separate busybox from the initramfs (ramdisk), as busybox is a common component, while ramdisk is a specific one.
+# You might have met a similar version of the build-system when they always shared the code in pscg_busyboxos - it is 
+# not longer the case, by design, to allow a rootfs that uses busybox, but does not have the initramfs code
+#------------------------------------------------------------------------------------------------------------------------------
+set_standard_default_values_distro_reuse() {
+	: ${config_distro__reuse_shared_src=true}               # Reuse the source code of the distro, if it exists
+	: ${config_distro__reuse_shared_arch=true}              # Reuse the architecture specific artifacts, if they exist
+	: ${config_distro__reuse_shared_src_busybox=true}       # Reuse the source code of busybox, if it exists
+	: ${config_distro__reuse_shared_src_ramdisk=true}       # Reuse the source code of ramdisk, if it exists
+	: ${config_distro__reuse_shared_arch_busybox=true}      # Reuse the architecture specific artifacts of busybox, if they exist
+	: ${config_distro__reuse_shared_arch_ramdisk=true}      # Reuse the architecture specific artifacts of the ramdisk, if they exist
+}
+
+
+#------------------------------------------------------------------------------------------------------------------------------
+# This adds tricky configuration Linux kernel options that non one thinks about (like encoding on FAT filesystems),
+# but either some architectures not add by default, or building minimized Linux kernel may ommit
+#------------------------------------------------------------------------------------------------------------------------------
+set_standard_default_values_tricky_kernel_config_items() {
+	: ${config_kernel__autoadd_tricky_and_required_config_items=true}
+}
+
+#---------------------------------------------------------------------------------------------------------------
+# This is for a minor speedup in working with the initramfs (ramdisk), and for less verbosity when packing it
+#---------------------------------------------------------------------------------------------------------------
+override_ramdisk_compression_and_verbosity_variables() {
+	: ${config_ramdisk__compression=cpio}
+	: ${config_ramdisk__verbose_cpio=false}
+}
+
+#
+# The following wrappers functions are explained on the respective inner functions they call (just a couple of lines above this comment)
+#
+set_standard_default_values_ramdisk() {
+	override_ramdisk_compression_and_verbosity_variables
+}
+set_standard_default_values_kernel() {
+	set_standard_default_values_tricky_kernel_config_items
+}
+
+#------------------------------------------------------------------
+# The default of the build system is something lighter than systemd, and it has not been used in a long while.
+# systemd is of course a much better choice usually, but not always. So we keep this, as an aware decision of the build system user, and set the default to systemd at the last-line,
+# unless someone else wants to modify it and use another init system (which is just fine).
+#-------------------------------------------------------------------
+override_pscgdebos_variables_init_frameworks() {
+	if [ "${config_distro}" = "pscg_debos" ] ; then
+		# In general, it is less likely to think of any modern full system that uses Debian and does not use systemd.
+		# It would preferrably test here for feature_graphics/for package groups/etc. but I still did not make it up entirely (I did the former, ENABLE_GRAPHICS).
+		# So we just set the last-line defaults to be systemd.
+		#
+		# Do note while at it, that it could be VERY useful to minimize the number of packages downloaded in the cache
+		# I just downloaded everthing that is declared so that complete offline build are possible, but on
+		# some architectures where debootstrap takes a lot of time, it can even take more time just to prepare the initial cache and download things
+		: ${config_pscgdebos__init_frameworks=systemd} # to assist with lightdm dependencies
+	fi
+}
 
 #----------------------------------------------------------------------------------------------
 # This is the function where we will set some important values that for the most part, you
@@ -95,6 +158,11 @@ export_variables() {
 # This file intentionally does not do these things, only what is specifically mentioned in the previous paragraph.
 #----------------------------------------------------------------------------------------------
 set_variables_conditionally() {
+	set_standard_default_values_distro_reuse	# Speeds up by using mutual caches and sources whenever possible
+	set_standard_default_values_ramdisk		# Speeds up by not compressing and not being super verbose. You may want to comment it out, it's harmless either way.
+	set_standard_default_values_kernel		# Takes care of some kernel configs. Not necessarily optimizing (optimiziation comes from kernel configuration expertise)
+	override_pscgdebos_variables_init_frameworks 	# set the init framework to systemd for pscg_debos, as that is what would mostly be expected
+
 	#
 	# Very simple optimization examples. (Starts from 1 and not from 0 to highlight that it is not something I would do in a code)
 	# The optimizations will affect conditional variables, that have been set outside of the script - they are grouped to help you learn
@@ -102,7 +170,7 @@ set_variables_conditionally() {
 	# and account for the general behavior. Remember, the goal in this script is to set reasonable defaults, the examples are bonuses, because it is
 	# the last-line script. In time everything set by the examples - you will set yourself on your respective wrapper scripts.
 	#
-	local simple_dev_optimization_1=false	# if set to true - don't copy the installer to the removable media. Instead, let the user do it themselves
+	local simple_dev_optimization_1=true	# if set to true - don't copy the installer to the removable media. Instead, let the user do it themselves
 	local simple_dev_optimization_2=true	# if set to true - don't create the storage device (i.e. the "hard disk") - Instead, let the user to it themselves
 	local simple_dev_optimization_3=false	# if set to true - don't create the live cd. The user can reuse system.img themselves, but won't enjoy the overlays, etc.
 	local simple_dev_optimization_4=true	# if set to true - don't create OTA tarball and recovery. The user cannot do it themselves. This is one of the most agressive optimizations.
@@ -118,6 +186,11 @@ set_variables_conditionally() {
 
 	# The OTA optimization comes first because it can affect other default values. This shows you that the order is important.
 	if [ "$simple_dev_optimization_4" = "true" ] ; then
+		#
+		# Note that if you do this on the very first build, an installer file will not be created. The run-qemu.sh script will tell
+		# you in this case which command line parameters to utilize to acknowledge that you are not interested in having a removable media.
+		#
+
 		# If you don't create an OTA image - you cannot create an installer image, as the installer installs the OTA tarball
 		: ${config_imager__create_ota_image=false}
 		: ${config_bsp__qemu_copy_installer_image_to_removable_media=false}
@@ -188,13 +261,6 @@ set_variables_conditionally() {
 
 
 main() {
-	#----tmp
-	cd $(realpath $(dirname ${BASH_SOURCE[0]}))
-	. ./staging-base.sh
-	set_standard_default_values_distro_reuse
-	distro_reuse_exports
-	set_standard_default_values_wip
-	#eotmp
 	init_main_builder_env			# Initialize the main builder environment
 	export_variables			# Export important variables
 
@@ -216,3 +282,4 @@ else
 	echo "Script is being executed directly."
 	main "$@"
 fi
+
