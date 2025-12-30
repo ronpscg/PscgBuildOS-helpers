@@ -37,55 +37,38 @@ set_partition_layout_variables() {
 # $1 ARCH
 #
 imager_variables_by_arch() {
+	return 0 # Demonstration that we can remove this function alltogether BUT THEN logs etc. go to tmp
+
 	local arch=$1
-	# Implicitly sets the installer image full path
-	# (just showing the definition: ${config_imager__installer_image_file="$config_toplevel__shared_artifacts/$BUILD_IMAGE_VERSION-installer.img"} )
-	if [ false = "I put this to avoid config_toplevel__shared_artifacts not being bound due to set -euo pipefail" ] ; then
-		# Sets the storage image
-		export config_bsp__qemu_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage-${arch}.img
-		# Sets the livecd by copying $config_imager__workdir_ext_partition_images/system.img to $config_bsp__qemu_livecd_storage_device_path
-		export config_bsp__qemu_livecd_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd-${arch}.img
-	fi #seeif
 
-	# More examples that are exaggerated (using ARCH=i386, as it is just faster to run the target itself for)
-	# Copies to removable media <if...>
-	# Adds: ./tmp-but-persistent/PscgBuildOS/removable_media-i386.img
-	export config_bsp__qemu_removable_media_path=$TMP_BUT_PERSISTENT_TOP/removable_media-${arch}.img
+	# TMP_TOP is used in the main script, and is defined here to avoid set -u errors.  TMP_BUT_PERSISTENT_TOP is an example. One can remove this function altogheter.
+	: ${TMP_TOP=${outdir}/tmp/PscgBuildOS}
+	: ${TMP_BUT_PERSISTENT_TOP=${outdir}/tmp-but-persistent/PscgBuildOS}
+	export TMP_TOP TMP_BUT_PERSISTENT_TOP 
 
-	# from the code:
-	# The system partition will be packed into this ext image
-	
-	export config_imager__workdir_ext_partition_images=${TMP_TOP}/staging-${arch}/wip-images
 
 	export preferred_tmp_top=${TMP_BUT_PERSISTENT_TOP} # When the images are huge, TMP_TOP might not be the best choice
 
+	export config_bsp__qemu_removable_media_path=$TMP_BUT_PERSISTENT_TOP/removable_media-${arch}.img
+	export config_imager__workdir_ext_partition_images=${TMP_TOP}/staging-${arch}/wip-images
 
-	# The file system contents of the installation media and the OTA tarball will be populated in the following directory
-	export config_imager__workdir=${preferred_tmp_top}/staging-${arch}/installer_fs_workdir
+	export config_imager__workdir=${preferred_tmp_top}/staging-${arch}/installer_fs_workdir # The file system contents of the installation media and the OTA tarball will be populated in the following directory
+	export config_imager__installer_workdir="${preferred_tmp_top}/staging-${arch}/installer-workdir" # This is a folder used only to mount the installer image
 
-	# This is a folder used only to mount the installer image
-	export config_imager__installer_workdir="${preferred_tmp_top}/staging-${arch}/installer-workdir"
-
+	#
+	# These are explanations. Perhaps they will find themselves into one of the README files
 	#
 	# Your installer image ${config_imager__installer_image_file} needs to be packed. For that, an image file is created, and loop mounted onto ${config_imager__installer_workdir}. 
-	# The populated contents willbe what you expect to see in your installer media, e.g.:
+	# The populated contents will be what you expect to see in your installer media, e.g.:
 	# autoflash  bzImage  initramfs.cpio  installables  installer.digest  installer.manifest  kernel.config
 	#
-	# That is as opposed to ./tmp-but-persistent/PscgBuildOS/staging-i386/installer_fs_workdir/ that would have:
+	# That is as opposed to ${config_imager__workdir} (e.g. ./tmp-but-persistent/PscgBuildOS/staging-i386/installer_fs_workdir/) that would have:
 	# autoflash  bzImage  initramfs.cpio  installables  kernel.config
 
-	# autoflash  bzImage  initramfs.cpio  installables  installer.digest  installer.manifest  kernel.config
 	#
 	# In the previously recorded video the exaple would be:
 	# /home/ron/aug19-pscgbuildos/artifacts/aug19_busyboxos_image_2308-i386-installer.img  <-> /home/ron/aug19-pscgbuildos/tmp-but-persistent/PscgBuildOS/staging-i386/installer-workdir
-	# However, the "installer-workdir" is removed when either there is an error, or all is done, in the cleanup_loopback_devices_and_mounts() function
-	
-
-
-	# Since I keep the previous materials at the end - I cleanup. Could alternatively, on heavy reuse, avoid that as well
-	: ${config_imager__workdir_start_from_scratch=true}		# Cleanup previous working directory
-	: ${config_imager__installer_workdir_start_from_scratch=true}	# Cleanup previous installer working directory
-	set +a
+	# However, you will not see "installer-workdir" nominally, as it is removed when either there is an error, or all is done, in the cleanup_loopback_devices_and_mounts() function
 }
 
 #
@@ -162,15 +145,6 @@ main() {
 	set_outdir
 	set -euo pipefail # must be done after checking for SUDO_HOME (or otherwise remove -u)
 
-	set -a
-	: ${TMP_TOP=${outdir}/tmp/PscgBuildOS}
-	: ${TMP_BUT_PERSISTENT_TOP=${outdir}/tmp-but-persistent/PscgBuildOS}
-
-	# NOT SURE WHY THESE TWO ARE NEEDED (Dec29)
-	#: ${config_buildtasks__do_generate_qemu_scripts=true}
-	#: ${config_buildtasks__do_pack_images=true}
-	set +a	
-
 	export config_ramdisk__kexectools_include=false # The reason to put it here is that not all architectures support kexec, and we (potentially) want to show the building of everything
 
 	START=$(date)
@@ -186,10 +160,9 @@ main() {
 	#build_busyboxos buildall sparc64 # qemu-system-sparc64: -device virtio-blk-pci,drive=emmcdisk: PCI: no slot/function available for virtio-blk-pci, all in use or reserved
 	#build_debian trixie buildall riscv # There is a specific issue with RISC-V on this build, kernel panics with the ramdisk, not sure why. 6.17-rc2. 6.19-rc2 is fine.
 
-	build_busyboxos ramdisk-kernel x86_64
-	echo ok
-	build_alpineos buildall x86_64
-	build_debian trixie buildall x86_64
+	#build_busyboxos ramdisk-kernel x86_64
+	#build_alpineos buildall x86_64
+	#build_debian trixie buildall x86_64
 	build_debian trixie buildall i386
 
 	END=$(date)
