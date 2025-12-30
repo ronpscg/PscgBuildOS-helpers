@@ -70,6 +70,7 @@ set_variables_conditionally() {
 	: ${config_bsp__qemu_recreate_storage_device=true}
 	: ${config_bsp__qemu_copy_installer_image_to_removable_media=true}
 	#: ${config_bsp__qemu_livecd_storage_device_path=$config_toplevel__shared_artifacts/pscgbuildos_storage_livecd.img}	# it's not exactly livecd - it's using system.img as the storage
+	: ${config_bsp__qemu_create_livecd_with_default_path_if_needs_be=true}	# if set true, the build system will automatically decide the path
 
 	# Some sizing examples
 	if [ "$config_distro" = "pscg_buildos" ] ; then
