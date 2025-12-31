@@ -55,18 +55,18 @@ busyboxos_imager_variables_by_arch() {
 
 	#
 	# Your installer image ${config_imager__installer_image_file} needs to be packed. For that, an image file is created, and loop mounted onto ${config_imager__installer_workdir}. 
-	# The populated contents willbe what you expect to see in your installer media, e.g.:
+	# The populated contents will be what you expect to see in your installer media, e.g.:
 	# autoflash  bzImage  initramfs.cpio  installables  installer.digest  installer.manifest  kernel.config
 	#
-	# That is as opposed to ./tmp-but-persistent/PscgBuildOS/staging-i386/installer_fs_workdir/ that would have:
+	# That is as opposed to ${config_imager__workdir} (e.g. ./tmp-but-persistent/PscgBuildOS/staging-i386/installer_fs_workdir/) that would have:
 	# autoflash  bzImage  initramfs.cpio  installables  kernel.config
 
 	# autoflash  bzImage  initramfs.cpio  installables  installer.digest  installer.manifest  kernel.config
 	#
-	# In the previously recorded video the exaple would be:
+	# In the previously recorded video the example would be:
 	# /home/ron/aug19-pscgbuildos/artifacts/aug19_busyboxos_image_2308-i386-installer.img  <-> /home/ron/aug19-pscgbuildos/tmp-but-persistent/PscgBuildOS/staging-i386/installer-workdir
-	# However, the "installer-workdir" is removed when either there is an error, or all is done, in the cleanup_loopback_devices_and_mounts() function
-	
+	# However, you will not see "installer-workdir" nominally, as it is removed when either there is an error, or all is done, in the cleanup_loopback_devices_and_mounts() function
+
 
 
 	# Since I keep the previous materials at the end - I cleanup. Could alternatively, on heavy reuse, avoid that as well
