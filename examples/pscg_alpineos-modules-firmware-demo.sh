@@ -15,10 +15,28 @@ cd $LOCAL_DIR/.. # work on the helpers main directory (cleanup example)
 NEXT_WRAPPER_SCRIPT=./wip-2-wrapper.sh  # Allow easy chaining of a subsequent script
 : ${ARCH=x86_64}
 
-export ARCH
-export config_distro__extra_layers
-config_distro__extra_layers+=" /home/ron/dev/otaworkshop/PscgBuildOS-extra-layers/examples/bsp/realtek/8821cu"
-config_distro__extra_layers+=" /home/ron/dev/otaworkshop/PscgBuildOS-extra-layers/examples/basic-examples/"
+override_ext_partition_system_params() {
+	# Sizing examples - all numbers here can change accordign to the rootfs build version and Linux kernel version, so you may want to experiment and adjust accordingly
+	# It is important to either specify the scale factor, or specify the minimal image size. 
+	# You can specify both, but you would almost always want to specify one or use the build-system defaults if you know the sizes.
+	# If you underestimate your minimum size - the scale factor will be used. For example, the current alpine Image is almost 30MB. If we set it to 20MB - the scale factor will be used
+	# In the same example, a scale factor of 1.07 or 1.10 will likely not do for the file system itself
+	# For the kernel modules, and extracting them into the system partition as a livecd - even 1.15 won't do 
+	: ${config_imager__ext_partition_system_size_scale_factor=1.20}
+	export config_imager__ext_partition_system_size_scale_factor
+	: ${config_imager__ext_partition_system_minimum_size_bytes=$((20*1024*1024))}
+	export config_imager__ext_partition_system_minimum_size_bytes
+}
 
-config_buildtasks__do_build_kernel=true config_bsp__qemu_livecd_extract_system_overlays_into_live_image=true  config_distro=pscg_alpineos BUILD_IMAGE_VERSION=stamtest  $NEXT_WRAPPER_SCRIPT buildall
 
+
+main() {
+	export ARCH
+	export config_distro__extra_layers
+	config_distro__extra_layers+=" /home/ron/dev/otaworkshop/PscgBuildOS-extra-layers/examples/bsp/realtek/8821cu"
+	config_distro__extra_layers+=" /home/ron/dev/otaworkshop/PscgBuildOS-extra-layers/examples/basic-examples/"
+	override_ext_partition_system_params
+	config_buildtasks__do_build_kernel=true config_bsp__qemu_livecd_extract_system_overlays_into_live_image=true  config_distro=pscg_alpineos BUILD_IMAGE_VERSION=stamtest  $NEXT_WRAPPER_SCRIPT buildall
+}
+
+main $@
