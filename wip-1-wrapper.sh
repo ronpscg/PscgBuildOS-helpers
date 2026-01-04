@@ -50,11 +50,33 @@ override_default_features() {
 	: ${ENABLE_SOUND=true}
 }
 
+#---------------------------------------------------------------------------------------------
+# Since this wrapper script sets default QEMU device parmeters, and some architectures have
+# been added later than others, to keep as much as common kernel configuration options as common
+# if we see along the way some quick fixes that need to be applied to the QEMU command line,
+# we can do them here, and later merge them. They don't go into the build project simply because
+# the QEMU device configuration is mostly up to the person who wants to run QEMU, and there are
+# a lot of variants like buses, devices, etc. for them to decide.
+#---------------------------------------------------------------------------------------------
+override_qemu_cmdline_variables_specific_arch_quickfix() {
+	if [ "$ENABLE_GRAPHICS" = "true" ] ; then
+		case "$ARCH" in
+			powerpc)
+				# The only relevant change here is usb-ehci instead of qemu-xhci, since CONFIG_USB_XHCI_HCD is not built in by default in powerpc (easy to add it - however we chose to give another example)
+				# this means you don't need to change any of the other bus names (e.g. id=...) - but we did change it for the good organization and view of the devices
+				: ${config_bsp_qemu__devices_input_params="-device usb-ehci,id=ehci -device usb-tablet,bus=ehci.0,port=1 -device usb-kbd,bus=ehci.0,port=2"}
+				;;
+			*)
+				;;
+		esac
+	fi
+}
 
 #----------------------------------------------------------------------------------------------------------
 # Decide set of QEMU command line parameters, according to the selected features
 #----------------------------------------------------------------------------------------------------------
 override_qemu_cmdline_variables() {
+	override_qemu_cmdline_variables_specific_arch_quickfix
 	if [ "$ENABLE_GRAPHICS" = "true" ] ; then
 		# set some defaults
 		: ${config_bsp_qemu__devices_graphics_params="-display gtk,gl=on -device virtio-gpu -vga none"}
@@ -100,8 +122,14 @@ override_qemu_cmdline_variables() {
 	
 	# Graphics definitely requires more memory than QEMU defaults. smp is nice to have
 	: ${config_bsp__qemu_num_cpus="-smp 2"}					# to specify: -smp <count>
-	: ${config_bsp__qemu_memory="-m 4g"}					# to specify -m <size, e.g. 4G etc.>
-	#: ${config_bsp_qemu__devices_console_params="-serial mon:stdio"}	# to speficy -nographic , -serial mon:stdio etc.
+	if [ "$ARCH" = "arm" ] ; then
+		# To enable PCI and attached peripherals, qemu-system-arm virt machine requires highmem=off, enforcing memory must be less than 4GB
+		# with highmem=off any number over 3072 (3g) will result with an error, even a single byte over it
+		: ${config_bsp__qemu_memory="-m 3g"}
+	else
+		: ${config_bsp__qemu_memory="-m 4g"}
+	fi
+	#: ${config_bsp_qemu__devices_console_params="-serial mon:stdio"}	# uncomment and modify to speficy -nographic , -serial mon:stdio etc.
 }
 
 kernel_config_basic_demonstrations() {
@@ -132,7 +160,8 @@ kernel_config_qemu_graphics_audio_and_peripherals_demonstrations() {
 		fi
 
 		# Virtio SND device
-		config_kernel__list_of_config_overrides+=" SND_VIRTIO=y"
+		# SND is ALSA, SOUND is general, SND depends on SOUND, and for *some* architectures they are compiled as modules by default!
+		config_kernel__list_of_config_overrides+=" SOUND=y SND=y SND_VIRTIO=y"
 	fi
 
 }
