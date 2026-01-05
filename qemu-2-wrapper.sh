@@ -82,5 +82,5 @@ fi
 
 $1
 
-NEXT_WRAPPER_SCRIPT=./wip-1-wrapper.sh  # Allow easy chaining of a subsequent script
+NEXT_WRAPPER_SCRIPT=./qemu-1-wrapper.sh  # Allow easy chaining of a subsequent script
 . $NEXT_WRAPPER_SCRIPT

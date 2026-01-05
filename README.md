@@ -17,15 +17,15 @@ This is a typical usage example of the scripts, as per now. The names are merely
 The main script in the *PscgBuildOS* project (referred to as `BUILD_TOP`), is `build-image.sh`.
 ```bash
 wrapper-all-archs.sh
---> ./wip-2-wrapper.sh $build_tasks
-  --> . ./wip-1-wrapper.sh
+--> ./qemu-2-wrapper.sh $build_tasks
+  --> . ./qemu-1-wrapper.sh
     --> . /build-pscgbuildos-image.sh ( aka the MAIN_HELPER_SCRIPT --> main() there is called)
       --> . $BUILD_TOP/build-image.sh
 
 ```
 
 Some more details:
-- [wip-2-wrapper.sh](wip-2-wrapper.sh) is a script that groups several defaults and logics, and gets a *buildtask* to do as an argument. That could be:
+- [qemu-2-wrapper.sh](qemu-2-wrapper.sh) is a script that groups several defaults and logics, and gets a *buildtask* to do as an argument. That could be:
   - `buildall`
   - `ramdisk-only`
   - `ramdisk-kernel`
@@ -33,12 +33,12 @@ Some more details:
 ## Usage Examples
 
 ```bash
-ENABLE_GRAPHICS=true config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=bookworm ARCH=x86_64  ./wip-1-wrapper.sh
+ENABLE_GRAPHICS=true config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=bookworm ARCH=x86_64  ./qemu-1-wrapper.sh
 ```
 
 Another example with an intended caveat:
 ```bash
-config_buildtasks__do_pack_images=false config_distro__add_oot_ota_code=true config_buildtasks__do_build_rootfs=true config_pscgdebos__extra_layers_file=$PWD/more-layers/more-layers.txt   ENABLE_GRAPHICS=true ENABLE_BROWSERS=true config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=trixie ARCH=i386   ./wip-1-wrapper.sh
+config_buildtasks__do_pack_images=false config_distro__add_oot_ota_code=true config_buildtasks__do_build_rootfs=true config_pscgdebos__extra_layers_file=$PWD/more-layers/more-layers.txt   ENABLE_GRAPHICS=true ENABLE_BROWSERS=true config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=trixie ARCH=i386   ./qemu-1-wrapper.sh
 ```
 
 Running something like this would result (as per the time of writing) in an error like this - because of the *explicit* `config_buildtasks__do_pack_images` skipping!:
@@ -67,3 +67,4 @@ it is not wasteful, and that the developer (builder) knows what they are doing, 
 ## More scripts (partial list of examples)
 - [pscg_alpineos-modules-firmware-demo.sh](pscg_alpineos-modules-firmware-demo.sh) concludes a list of important videos (see links in the file and in the Youtube channel) explaining how to add drivers and firmware to  pscg_alpineos, also nicely explaining how to include more layers in the build
 - [reuse-example-alpineos.sh](reuse-example-alpineos.sh) - shows how to reuse materials from previous builds. I have not revisited it lately. The idea and explanations are covered fully in https://www.youtube.com/watch?v=JKlz2s47E9s&list=PLBaH8x4hthVysdRTOlg2_8hL6CWCnN5l-&index=108 
+- [examples-arch-subarch.sh](examples-arch-subarch.sh) - shows how to build separately for *armel* (*Debian, Busybox) *armv7l* (Alpine) as opposed to the default *armhf* variant for *arm*

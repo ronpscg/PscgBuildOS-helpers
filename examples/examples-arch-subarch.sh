@@ -155,62 +155,67 @@ debian_imager_variables_by_arch() {
 # $2: build_tasks
 # $3: "<arch1> <arch2>" - enclosed with "" (otherwise just do shift2 and use this as the last argument...)
 #
-build_debian() {
+build_debian_one_arch_subarch() {
 	codename=$1
 	build_tasks=$2
-	ARCHS=$3
-	for ARCH in $ARCHS ; do
-		debian_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
-		export ARCH=$ARCH config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=$1
-		local msg="$config_distro-$ARCH ($codename) - $build_tasks"
-		report "$msg - STARTING "
-		if echo y | $NEXT_WRAPPER_SCRIPT $build_tasks ; then
-			report_success "$msg"
-		else
-			report_fail "$msg"
-		fi
-	done
-}
-
-
-#
-# $2: build_tasks
-# $3: "<arch1> <arch2>" - enclosed with "" (otherwise just do shift2 and use this as the last argument...)
-#
-build_busyboxos() {
-	build_tasks=$1
-	ARCHS=$2
-	for ARCH in $ARCHS ; do
-		busyboxos_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
-		export ARCH=$ARCH config_distro=pscg_busyboxos		
-		local msg="$config_distro-$ARCH - $build_tasks"
-		report "$msg - STARTING "
-		if echo y | $NEXT_WRAPPER_SCRIPT $build_tasks ; then
-			report_success "$msg"
-		else
-			report_fail "$msg"
-		fi
-	done
+	ARCH=$3
+	SUBARCH=${4-""}
+	if [ -n "$SUBARCH" ] ; then
+		export config_toplevel__arch_subarch=$SUBARCH
+	fi
+	debian_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
+	export ARCH=$ARCH config_distro=pscg_debos config_pscgdebos__debian_or_ubuntu=debian config_pscgdebos__debian_codename=$1
+	local msg="$config_distro-$ARCH ($codename) - $build_tasks"
+	report "$msg - STARTING "
+	if echo y | $NEXT_WRAPPER_SCRIPT $build_tasks ; then
+		report_success "$msg"
+	else
+		report_fail "$msg"
+	fi
 }
 
 #
 # $2: build_tasks
 # $3: "<arch1> <arch2>" - enclosed with "" (otherwise just do shift2 and use this as the last argument...)
 #
-build_alpineos() {
+build_busyboxos_one_arch_subarch() {
 	build_tasks=$1
-	ARCHS=$2
-	for ARCH in $ARCHS ; do
-		busyboxos_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
-		export ARCH=$ARCH config_distro=pscg_alpineos
-		local msg="$config_distro-$ARCH - $build_tasks"
-		report "$msg - STARTING "
-		if echo y | $NEXT_WRAPPER_SCRIPT $build_tasks ; then
-			report_success "$msg"
-		else
-			report_fail "$msg"
-		fi
-	done
+	ARCH=$2
+	SUBARCH=${3-""}
+	if [ -n "$SUBARCH" ] ; then
+		export config_toplevel__arch_subarch=$SUBARCH
+	fi
+	busyboxos_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
+	export ARCH=$ARCH config_distro=pscg_busyboxos		
+	local msg="$config_distro-$ARCH - $build_tasks"
+	report "$msg - STARTING "
+	if echo y | $NEXT_WRAPPER_SCRIPT $build_tasks ; then
+		report_success "$msg"
+	else
+		report_fail "$msg"
+	fi
+}
+
+#
+# $2: build_tasks
+# $3: "<arch1> <arch2>" - enclosed with "" (otherwise just do shift2 and use this as the last argument...)
+#
+build_alpineos_one_arch_subarch() {
+	build_tasks=$1
+	ARCH=$2
+	SUBARCH=${3-""}
+	if [ -n "$SUBARCH" ] ; then
+		export config_toplevel__arch_subarch=$SUBARCH
+	fi
+	busyboxos_imager_variables_by_arch $ARCH	# Concentrate in one function so that it is easy to demonstrate and to comment out
+	export ARCH=$ARCH config_distro=pscg_alpineos
+	local msg="$config_distro-$ARCH - $build_tasks"
+	report "$msg - STARTING "
+	if echo y | $NEXT_WRAPPER_SCRIPT $build_tasks ; then
+		report_success "$msg"
+	else
+		report_fail "$msg"
+	fi
 }
 
 set_homedir() {
@@ -241,31 +246,25 @@ main() {
 
 
 	export config_ramdisk__kexectools_include=false # The reason to put it here is that not all architectures support kexec, and we (potentially) want to show the building of everything
-
-	# The next exported block is done like this as it is very significant - if you remove it / set the conditional variables to false, you will be able to build
-	# and test the initramfs, and a livecd rootfs much faster, and save time and space on creating a storage device for the EMMC/Disk storage. You will then
-	# need to create it on your own. It is easy and possible to do the switches, as it is an example, I am explaining the exact rationale - to be faster, remove this block, to test
-	# everything keep it, to test everything but also keep the storage device, per product - modify the last variable to true
-	# If you don't create the OTA image - there is no point for you to have an installer either.
 	set -a
+	# This demonstrates full image creation and installer usage
 	: ${config_imager__create_ota_image=true}
-        # We are creating a livecd where we just copy the system.img and pack it in the resulting image - and we don't want qemu to recreate it.
-        # If we decide to create both a livecd and and installer image - we will use other variables
-        # The reason for separating the livecd is that I wanted to avoid the time it takes to compress the image, which is (re)used for the OTA update.
-        # Otherwise, I would make the livecd and the installer the same image (and I might do it again - I used to have this mode in the past but it was not popular with customers)
-        # This is what simple_dev_optimization_2 in the last-line script does if enabled
         : ${config_bsp__qemu_recreate_storage_device=true}
-	config_bsp__qemu_recreate_storage_device=false # for now - to avoid excessive extra storage - fill free to remove this line if you have "infinite" disk space!
+	#
+	# Storage: setting it to false to let the user have more control - this demonstrates full installer
+	# The user can do something like this when running the image - and reuse the created storage file for each version they test
+	# $ dd if=/dev/zero of=~/PscgBuildOS/out/tmp-but-persistent/PscgBuildOS/disk.img bs=1G count=20
+	# and then they can [install] and use the image, e.g.
+	# $ CMDLINE=waitforremovablemedia EMMC_IMAGE_FILE=~/PscgBuildOS/out/tmp-but-persistent/PscgBuildOS/disk.img /home/ron/PscgBuildOS/out/artifacts/runqemus/pscg_debos-debian-trixie-minbase-armel/run-qemu.sh
+	# #
+	config_bsp__qemu_recreate_storage_device=false 
 	set +a
 
 	START=$(date)
-	build_busyboxos buildall "$BUSYBOX_ARCHS"
-	build_alpineos buildall "$ALPINE_ARCHS"
-	build_debian trixie buildall "$DEBIAN_ARCHS"
-	# Note: as per the post release of Debian Trixie, all Debian ports next-sid are broken. Some day they will work, but it is not the day of this commit.
-	#       prior to the release of Trixie the loongarch has been tested extensively, and worked well. I think the sparc64 also worked well, 
-	#       but I mostly tested loongarch and I think riscv64 then, because if I am not wrong it was also on Debian ports before Trixie became the new stable
-	#build_debian sid buildall "$DEBIAN_PORTS_ARCHS"
+
+	build_debian_one_arch_subarch trixie buildall arm armel
+	build_busyboxos_one_arch_subarch buildall arm armel
+	build_alpineos_one_arch_subarch buildall arm armv7
 
 	END=$(date)
 	report "Done."
