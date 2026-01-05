@@ -65,6 +65,6 @@ the latest versions of the upstream components (Linux kernel, rootfs, etc.), and
 it is not wasteful, and that the developer (builder) knows what they are doing, and optimizes their parameters accordingly, without forcing exaggerated values on the build sytem itself.
 
 ## More scripts (partial list of examples)
-- [pscg_alpineos-modules-firmware-demo.sh](pscg_alpineos-modules-firmware-demo.sh) concludes a list of important videos (see links in the file and in the Youtube channel) explaining how to add drivers and firmware to  pscg_alpineos, also nicely explaining how to include more layers in the build
-- [reuse-example-alpineos.sh](reuse-example-alpineos.sh) - shows how to reuse materials from previous builds. I have not revisited it lately. The idea and explanations are covered fully in https://www.youtube.com/watch?v=JKlz2s47E9s&list=PLBaH8x4hthVysdRTOlg2_8hL6CWCnN5l-&index=108 
-- [examples-arch-subarch.sh](examples-arch-subarch.sh) - shows how to build separately for *armel* (*Debian, Busybox) *armv7l* (Alpine) as opposed to the default *armhf* variant for *arm*
+- [pscg_alpineos-modules-firmware-demo.sh](examples/pscg_alpineos-modules-firmware-demo.sh) concludes a list of important videos (see links in the file and in the Youtube channel) explaining how to add drivers and firmware to  pscg_alpineos, also nicely explaining how to include more layers in the build
+- [reuse-example-alpineos.sh](examples/reuse-example-alpineos.sh) - shows how to reuse materials from previous builds. I have not revisited it lately. The idea and explanations are covered fully in https://www.youtube.com/watch?v=JKlz2s47E9s&list=PLBaH8x4hthVysdRTOlg2_8hL6CWCnN5l-&index=108 
+- [examples-arch-subarch.sh](examples/examples-arch-subarch.sh) - shows how to build separately for *armel* (*Debian, Busybox) *armv7l* (Alpine) as opposed to the default *armhf* variant for *arm*
