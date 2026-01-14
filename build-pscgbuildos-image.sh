@@ -145,6 +145,21 @@ override_pscgdebos_variables_init_frameworks() {
 	fi
 }
 
+#------------------------------------------------------------------
+# There is no real need for a network manager by default.
+# However, it can be useful, and systemd comes with one, so if 
+# that is the case, select it, and the build system will use it
+# to elegantly automatically enable networking via DHCP
+#------------------------------------------------------------------
+override_pscgdebos_variables_network_manager() {
+	if [ "${config_distro}" = "pscg_debos" ] ; then
+		if [ "${config_pscgdebos__init_frameworks}" = "systemd" ] ; then
+			# Enables a simple example of showing what a network manager is, and it is available by default if systemd is the init_framework
+			: ${config_pscgdebos__network_manager="systemd-networkd"}
+		fi
+	fi
+}
+
 #----------------------------------------------------------------------------------------------
 # This is the function where we will set some important values that for the most part, you
 # would want to be defalut. However, as mentioned above, with the exception of sharing 
@@ -162,6 +177,7 @@ set_variables_conditionally() {
 	set_standard_default_values_ramdisk		# Speeds up by not compressing and not being super verbose. You may want to comment it out, it's harmless either way.
 	set_standard_default_values_kernel		# Takes care of some kernel configs. Not necessarily optimizing (optimiziation comes from kernel configuration expertise)
 	override_pscgdebos_variables_init_frameworks 	# set the init framework to systemd for pscg_debos, as that is what would mostly be expected
+	override_pscgdebos_variables_network_manager	# sets the network manager - it is fine to not set it at all, and instead have, e.g. scripts or services to get dhcp.
 
 	#
 	# Very simple optimization examples. (Starts from 1 and not from 0 to highlight that it is not something I would do in a code)
