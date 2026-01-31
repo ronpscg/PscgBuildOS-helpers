@@ -15,7 +15,8 @@ defaults() {
 		#config_pscgdebos__extra_layers_file=$PWD/more-layers/more-pscg_debos-layers.txt
 		#: ${ENABLE_BROWSERS=true}
 	else
-		: ${ENABLE_GRAPHICS=false}
+		: ${ENABLE_GRAPHICS=true}							# It's fine to enable the grpahics
+		: ${config_imager__installer_media_size_sectors=$((200*1024*1024/512))}		# The image sizes will liklely not exceed 200MB for pscg_busyboxos (definitely) and pscg_alpineos (unless you add much more packages and then it is up to you to increase the size in a wrapping script)
 	fi
 	: ${ENABLE_BROWSERS=false}
 	: ${ENABLE_SOUND=true}	# although no one uses it as is
@@ -34,6 +35,7 @@ buildall() {
 	: ${config_distro__add_oot_ota_code=true}
 	: ${config_buildtasks__do_build_rootfs=true}
 	: ${config_buildtasks__do_build_kernel=true}
+	: ${config_buildtasks__do_build_kernel_dtbs=true}
 	: ${config_pscgdebos__extra_layers_file=$PWD/more-layers.txt} # since the file does not exist, we will not source it. This is an example - you can set if you want what is inside $PWD/more-layers/...
 	: ${config_distro=pscg_debos}
 	: ${config_pscgdebos__debian_or_ubuntu=debian}
@@ -47,6 +49,7 @@ ramdisk-only() {
 	: ${config_distro__add_oot_ota_code=false}
 	: ${config_buildtasks__do_build_rootfs=false}
 	: ${config_buildtasks__do_build_kernel=false}
+	: ${config_buildtasks__do_build_kernel_dtbs=false}
 	: ${config_pscgdebos__extra_layers_file=$PWD/more-layers.txt}
 	: ${config_distro=pscg_debos}
 	: ${config_pscgdebos__debian_or_ubuntu=debian}
@@ -60,6 +63,7 @@ ramdisk-kernel() {
 	: ${config_distro__add_oot_ota_code=false}
 	: ${config_buildtasks__do_build_rootfs=false}
 	: ${config_buildtasks__do_build_kernel=true}
+	: ${config_buildtasks__do_build_kernel_dtbs=true}
 	: ${config_pscgdebos__extra_layers_file=$PWD/more-layers.txt}
 	: ${config_distro=pscg_debos}
 	: ${config_pscgdebos__debian_or_ubuntu=debian}

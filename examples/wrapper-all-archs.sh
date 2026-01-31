@@ -4,12 +4,25 @@ cd $LOCAL_DIR/.. # work on the helpers main directory (cleanup example)
 
 NEXT_WRAPPER_SCRIPT=./qemu-2-wrapper.sh	# Allow easy chaining of a subsequent script
 
-DEBIAN_ARCHS="i386 x86_64 arm arm64 riscv s390"
-DEBIAN_PORTS_ARCHS="loongarch sparc64"
+ALL_DEBIAN_ARCHS="i386 x86_64 arm arm64 riscv s390"
+ALL_DEBIAN_PORTS_ARCHS="loongarch sparc64"
 # BusyboxOS supports everything
-BUSYBOX_ARCHS="$DEBIAN_ARCHS $DEBIAN_PORTS_ARCHS"
+ALL_BUSYBOX_ARCHS="$DEBIAN_ARCHS $DEBIAN_PORTS_ARCHS"
 # You can look at the different projects and also set a "subarch", e.g. to build both for armv7 and armhf in Alpine etc.
-ALPINE_ARCHS="i386 x86_64 arm arm64 riscv s390 loongarch" 
+ALL_ALPINE_ARCHS="i386 x86_64 arm arm64 riscv s390 loongarch" 
+
+# Enable setting the architectures from a wrapper script
+: ${DEBIAN_ARCHS=$ALL_DEBIAN_ARCHS}
+: ${DEBIAN_PORTS_ARCHS=$ALL_DEBIAN_PORTS_ARCHS}
+: ${BUSYBOX_ARCHS=$ALL_BUSYBOX_ARCHS}
+: ${ALPINE_ARCHS=$ALL_ALPINE_ARCHS}
+
+# Enable setting the build commands externally. We will provide defaults to keep it short
+# And avoid declaring arrays or adding more sourcing. 
+: ${DISTROS_TO_BUILD="busybox alpineos debian"}
+
+: ${DEFAULT_BUILD_TARGET=buildall} # e.g. buildall|ramdisk-only|ramdisk-kernel etc.
+
 
 if [ "$(lsb_release -r | cut -f 2)" = "24.04" ] ; then
 	# or alternatively - set the links of gcc-14, and remove this if clause altogether
@@ -259,13 +272,27 @@ main() {
 	set +a
 
 	START=$(date)
-	build_busyboxos buildall "$BUSYBOX_ARCHS"
-	build_alpineos buildall "$ALPINE_ARCHS"
-	build_debian trixie buildall "$DEBIAN_ARCHS"
-	# Note: as per the post release of Debian Trixie, all Debian ports next-sid are broken. Some day they will work, but it is not the day of this commit.
-	#       prior to the release of Trixie the loongarch has been tested extensively, and worked well. I think the sparc64 also worked well, 
-	#       but I mostly tested loongarch and I think riscv64 then, because if I am not wrong it was also on Debian ports before Trixie became the new stable
-	#build_debian sid buildall "$DEBIAN_PORTS_ARCHS"
+	for d in $DISTROS_TO_BUILD ; do
+		case $d in 
+			busyboxos|busybox|pscg_busyboxos)
+				build_busyboxos "$DEFAULT_BUILD_TARGET" "$BUSYBOX_ARCHS"
+				;;
+			alpineos|alpine|pscg_alpineos)
+				build_alpineos "$DEFAULT_BUILD_TARGET" "$ALPINE_ARCHS"
+				;;
+			debos|debian|pscg_debos)
+				build_debian trixie "$DEFAULT_BUILD_TARGET" "$DEBIAN_ARCHS"
+				# Note: as per the post release of Debian Trixie, all Debian ports next-sid are broken. Some day they will work, but it is not the day of this commit.
+				#       prior to the release of Trixie the loongarch has been tested extensively, and worked well. I think the sparc64 also worked well, 
+				#       but I mostly tested loongarch and I think riscv64 then, because if I am not wrong it was also on Debian ports before Trixie became the new stable
+				#build_debian sid "$DEFAULT_BUILD_TARGET" "$DEBIAN_PORTS_ARCHS"
+				;;
+			*)
+				echo invalid DISTROS_TO_BUILD option $d. continuing
+				continue
+				;;
+		esac
+	done
 
 	END=$(date)
 	report "Done."
