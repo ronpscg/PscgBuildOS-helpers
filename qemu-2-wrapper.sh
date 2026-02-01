@@ -21,6 +21,11 @@ defaults() {
 	: ${ENABLE_SOUND=true}	# although no one uses it as is
 
 	export ENABLE_GRAPHICS ENABLE_SOUND ENABLE_BROWSERS
+
+	: ${config_pscg_alpineos__postbuild_clean_apk_caches=false} 
+	: ${config_pscgdebos__postbuild_clean_apt_caches=false}
+	export config_pscg_alpineos__postbuild_clean_apk_caches config_pscgdebos__postbuild_clean_apt_caches
+
 }
 
 buildall() {
